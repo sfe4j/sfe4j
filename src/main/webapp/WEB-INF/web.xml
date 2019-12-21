@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<web-app
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://java.sun.com/xml/ns/javaee"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+        id="sfe4j"
+        version="2.5">
+
+    <display-name>Sfe4j</display-name>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <!-- Displays file explorer. -->
+    <servlet>
+        <servlet-name>File Explorer Servlet</servlet-name>
+        <servlet-class>com.v2code.sfe4j.web.servlet.FileExplorerServlet</servlet-class>
+        <init-param>
+            <param-name>base.dir.name</param-name>
+            <param-value>/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>restrict.to.base.dir</param-name>
+            <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>restrict.from.exec</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>restrict.from.write</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>File Explorer Servlet</servlet-name>
+        <url-pattern>/files</url-pattern>
+    </servlet-mapping>
+
+    <!-- Tail File Servlet. -->
+    <servlet>
+        <servlet-name>Tail File Servlet</servlet-name>
+        <servlet-class>com.v2code.sfe4j.web.servlet.TailServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Tail File Servlet</servlet-name>
+        <url-pattern>/tail</url-pattern>
+    </servlet-mapping>
+</web-app>

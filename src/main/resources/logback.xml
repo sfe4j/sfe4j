@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true">
+	<property name="logback.loglevel" value="DEBUG" />
+	<property name="appName" value="sfe4j" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="rollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/${appName}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/server.%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>level:%p|$|timestamp:%d{yyyy-MM-dd HH:mm:ss.SSS Z}|$|thread:%t|$|class:%C.%M|$|line:%L|$|throwable:%throwable{1}|$|message:%m%n%throwable{500}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ch.qos.logback" level="${logback.loglevel}"/>
+    <logger name="org.apache" level="${logback.loglevel}"/>
+    <logger name="org.springframework" level="${logback.loglevel}"/>
+    <logger name="java.sql.Connection" level="${logback.loglevel}"/>
+    <logger name="java.sql.Statement" level="${logback.loglevel}"/>
+    <logger name="java.sql.PreparedStatement" level="${logback.loglevel}"/>
+    <logger name="java.sql.ResultSet" level="${logback.loglevel}"/>
+    <logger name="com.v2code.sfe4j" level="${logback.loglevel}"/>
+
+    <root level="DEBUG">
+        <appender-ref ref="console"/>
+        <appender-ref ref="rollingFile"/>
+    </root>
+
+</configuration>
