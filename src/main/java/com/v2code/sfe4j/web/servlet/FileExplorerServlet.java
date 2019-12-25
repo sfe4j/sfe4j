@@ -82,11 +82,11 @@ public class FileExplorerServlet extends BaseServlet {
             String requestMessage = processRequest(request, baseDir, fileItems);
             this.presentDirectoryListing(baseDir, requestMessage, request, response);
         } else {
-            this.presentFileContent(downloadFileName, request, response);
+            this.presentFileContent(downloadFileName, response);
         }
     }
 
-    private void presentFileContent(String filename, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void presentFileContent(String filename, HttpServletResponse response) throws IOException {
 
         File displayFile = new File(filename);
         FileInputStream stream = new FileInputStream(displayFile);
@@ -163,7 +163,7 @@ public class FileExplorerServlet extends BaseServlet {
         if (!StringUtils.isEmpty(runExecutableName)) {
             message = this.runExecutable(runExecutableName);
         } else if (ServletFileUpload.isMultipartContent(request)) {
-            message = this.processUpload(request, baseDir, items);
+            message = this.processUpload(baseDir, items);
         } else if (!StringUtils.isEmpty(deleteFileName)) {
             message = this.processDelete(deleteFileName);
         } else if (!StringUtils.isEmpty(mkDirName)) {
@@ -172,7 +172,7 @@ public class FileExplorerServlet extends BaseServlet {
         return message;
     }
 
-    private String processUpload(HttpServletRequest request, File directory, List<FileItem> items) {
+    private String processUpload(File directory, List<FileItem> items) {
         if (this.fileExplorerRestrictions.isRestrictFromWrite()) {
             return "File Upload not allowed.  Modify restrict.from.write setting to allow file upload.";
         }
@@ -246,7 +246,7 @@ public class FileExplorerServlet extends BaseServlet {
             if (!StringUtils.isEmpty(stdOut)) {
                 message.append(stdOut);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new Sfe4jRuntimeException("error executing file.", e);
         }
 
