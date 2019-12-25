@@ -1,6 +1,9 @@
+env:
+  global:
+    - CODECOV_TOKEN=9016c5b0-ceb8-4c14-af49-d1db225870c2
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk8
 sudo: false
 script: mvn clean test
 after_success:
