@@ -223,7 +223,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
-        <checkstyle.version>8.18</checkstyle.version>
+        <checkstyle.version>8.29</checkstyle.version>
         <findbugs-maven-plugin.version>3.0.1</findbugs-maven-plugin.version>
         <jacoco.version>0.8.2</jacoco.version>
         <logback.version>1.1.2</logback.version>
