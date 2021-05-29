@@ -1,0 +1,3 @@
+sfe4j:
+  base-dir-path: "c:/"
+  restrict-to-base-dir: true
