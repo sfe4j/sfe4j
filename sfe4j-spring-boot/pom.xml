@@ -47,4 +47,91 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+
+    <build>
+        <!-- 此tag下面的所有plugins都是关于上传jar包的依赖 -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+                <configuration>
+                    <!-- 配置本地打包后的本地仓库存储地址，后续上传jar包会从此仓库中去取 -->
+                    <altDeploymentRepository>
+                        internal.repo::default::file://${project.build.directory}/mvn-repo
+                    </altDeploymentRepository>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.12</version>
+                <configuration>
+                    <message>Maven artifacts for ${project.artifactId}-${project.version}</message>
+                    <noJekyll>true</noJekyll>
+                    <!-- 指定从哪里去取打好的包，并上传至github -->
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                    <!--
+                        指定要上传的分支, refs/heads 这个不变，后面的分支名可选，可以采取一个jar包使用一个分支的策略。
+                        若多个jar包同时发布在同一个分支的话，会覆盖。。。。
+                    -->
+                    <branch>refs/heads/master</branch>
+                    <!-- 包含outputDirectory标签内填的文件夹中的所有内容 -->
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                    <!-- github远程存储outputDirectory标签内填的文件夹中的内容 -->
+                    <repositoryName>mvn-repo</repositoryName>
+                    <!--
+                      github的用户名，注意不是登录的用户名，此项需要登录后，进入https://github.com/settings/profile页面配置Name属性，
+                      否则会报
+                      [ERROR] Failed to execute goal com.github.github:site-maven-plugin:0.12:site
+                      (default) on project rfcore: Error creating commit: Invalid request.
+                      [ERROR] For 'properties/name', nil is not a string.
+                      [ERROR] For 'properties/name', nil is not a string. (422)
+                      [ERROR] -> [Help 1]
+                      的错误
+                    -->
+                    <repositoryOwner>N_G</repositoryOwner>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

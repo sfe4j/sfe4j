@@ -49,4 +49,18 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>guuuuo</name>
+            <!--
+            1. https://raw.github.com => 固定写法, 若编译的时候一直连接不上(Connection reset)，可将https改成http并反复重试
+            2. guuuuo => github登录的用户名
+            3. mvn-repo => 存储发布的jar仓库
+            4. master => 从哪个分支中拿jar包
+            -->
+            <url>https://raw.github.com/guuuuo/mvn-repo/master</url>
+        </repository>
+    </repositories>
+
 </project>
