@@ -1,6 +1,6 @@
 package com.amoylabs.sfe4j.spring.boot.service;
 
-import com.amoylabs.sfe4j.spring.boot.property.Sfe4jProperties;
+import com.amoylabs.sfe4j.spring.boot.configuration.Sfe4jConfiguration;
 import com.amoylabs.sfe4j.spring.boot.vo.FileTreeVO;
 import com.amoylabs.sfe4j.spring.boot.vo.FileVO;
 import org.apache.commons.lang3.StringUtils;
@@ -14,11 +14,11 @@ import java.util.TreeSet;
 @Service
 public class FileExplorerService {
 
-    private Sfe4jProperties sfe4jProperties;
+    private Sfe4jConfiguration sfe4jConfiguration;
 
     public FileTreeVO buildFileTree(String dir) {
 
-        String currentDirectoryPath = StringUtils.isNotEmpty(dir) ? dir : sfe4jProperties.getBaseDirPath();
+        String currentDirectoryPath = StringUtils.isNotEmpty(dir) ? dir : sfe4jConfiguration.getBaseDirPath();
 
         File currentDirectory = new File(currentDirectoryPath);
 
@@ -36,7 +36,7 @@ public class FileExplorerService {
         FileTreeVO fileTree = new FileTreeVO();
         fileTree.setCurrentDirectory(new FileVO(currentDirectory));
         if (currentDirectory.getParentFile() != null
-                && (!sfe4jProperties.getRestrictToBaseDir() || isWithinBase(currentDirectory.getParentFile()))) {
+                && (!sfe4jConfiguration.getRestrictToBaseDir() || isWithinBase(currentDirectory.getParentFile()))) {
             fileTree.setParentDirectory(new FileVO(currentDirectory.getParentFile()));
         }
         fileTree.setChildDirectories(childDirectories);
@@ -48,7 +48,7 @@ public class FileExplorerService {
     private boolean isWithinBase(File dir) {
         boolean isWithinBase = false;
         File localDir = dir;
-        File baseDir = new File(sfe4jProperties.getBaseDirPath());
+        File baseDir = new File(sfe4jConfiguration.getBaseDirPath());
         if (baseDir.equals(dir)) {
             isWithinBase = true;
         }
@@ -67,7 +67,7 @@ public class FileExplorerService {
      * Setter
      */
     @Autowired
-    public void setSfe4jProperties(Sfe4jProperties sfe4jProperties) {
-        this.sfe4jProperties = sfe4jProperties;
+    public void setSfe4jConfiguration(Sfe4jConfiguration sfe4jConfiguration) {
+        this.sfe4jConfiguration = sfe4jConfiguration;
     }
 }

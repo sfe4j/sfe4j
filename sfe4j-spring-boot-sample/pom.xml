@@ -13,17 +13,24 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>sfe4j-spring-boot-sample</name>
     <description>Demo project for Spring Boot</description>
+
     <properties>
         <java.version>1.8</java.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <sfe4j-spring-boot-starter-version>1.0.0</sfe4j-spring-boot-starter-version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-freemarker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.amoylabs</groupId>
+            <artifactId>sfe4j-spring-boot-starter</artifactId>
+            <version>${sfe4j-spring-boot-starter-version}</version>
         </dependency>
 
         <dependency>

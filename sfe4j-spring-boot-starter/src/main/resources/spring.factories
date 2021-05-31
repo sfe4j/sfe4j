@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.amoylabs.sfe4j.spring.boot.starter.Sfe4jAutoConfiguration

@@ -1,0 +1,4 @@
+sfe4j:
+  base-dir-path: "c:/dev"
+  restrict-to-base-dir: false
+
