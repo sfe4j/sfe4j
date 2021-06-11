@@ -1,0 +1,3 @@
+<#noautoesc>
+${fileContent}
+</#noautoesc>
