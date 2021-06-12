@@ -63,13 +63,13 @@ sfe4j:
   quick-links:
     root: "/"
     logs: "/data/logs"
-  base-dir-path: "/"
-  restrict-to-base-dir: false
+  base-dir-path: "/data"
+  restrict-to-base-dir: true
 ```
 
 ## Demo
 ### Live demo
-Link: https://backoffice.amoylabs.com:8443/file-explorer?dir=/logs
+Link: https://backoffice.amoylabs.com:8443/file-explorer
 
 ### Screenshot
 ![sfe4j demo screenshot](https://raw.githubusercontent.com/sfe4j/assets-repo/main/sfe4j-demo.png)
