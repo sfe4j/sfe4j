@@ -1,7 +1,7 @@
 # SFE4J
 
 [![CI Status](https://github.com/sfe4j/sfe4j/actions/workflows/build.yml/badge.svg)](https://github.com/sfe4j/sfe4j/actions/workflows/build.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sfe4j/sfe4j/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/sfe4j/sfe4j)](https://github.com/sfe4j/sfe4j/blob/master/LICENSE)
 
 Simple File Explorer for spring-boot based Java Web Application.
 
@@ -80,4 +80,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 Please make sure to update tests as appropriate.
 
 ## License
-[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+[GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
