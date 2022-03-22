@@ -70,8 +70,8 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
-                     docker build -t docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER -f .cicd/Dockerfile .
-                  """
+                        docker build -t docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER -f .cicd/Dockerfile .
+                    """
                 }
             }
         }
@@ -80,8 +80,8 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
-                     docker push docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER
-                  """
+                        docker push docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER
+                    """
                 }
             }
         }
@@ -91,27 +91,27 @@ pipeline {
                 container('git') {
                     withCredentials([sshUserPrivateKey(credentialsId: 'github_guuuuo', keyFileVariable: 'GITHUB_SSH_PRIVATE_KEY_FILE')]) {
                         sh """
-                         mkdir ~/.ssh
-                         cat ${GITHUB_SSH_PRIVATE_KEY_FILE} > ~/.ssh/id_ed25519
-                         chmod 400 ~/.ssh/id_ed25519
-                         
-                         export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-                         git config --global user.email "1460412+guuuuo@users.noreply.github.com"
-                         git config --global user.name "N_G"
-                                                    
-                         git clone git@github.com:sfe4j/sfe4j-config.git
-                         cd sfe4j-config/
-                         
-                         echo "Current Version"
-                         cat kustomize/deploy.yaml
-                         sed -i 's+docker.amoylabs.com:30500/sfe4j:.*+docker.amoylabs.com:30500/sfe4j:${BUILD_NUMBER}+g' kustomize/deploy.yaml
-                         echo "New Version"
-                         cat kustomize/deploy.yaml
-                         
-                         git add kustomize/deploy.yaml
-                         git commit -m "feat: Upgrade version to ${BUILD_NUMBER}"
-                         git push origin master
-                      """
+                            mkdir ~/.ssh
+                            cat ${GITHUB_SSH_PRIVATE_KEY_FILE} > ~/.ssh/id_ed25519
+                            chmod 400 ~/.ssh/id_ed25519
+
+                            export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+                            git config --global user.email "1460412+guuuuo@users.noreply.github.com"
+                            git config --global user.name "N_G"
+
+                            git clone git@github.com:sfe4j/sfe4j-config.git
+                            cd sfe4j-config/
+
+                            echo "Current Version"
+                            cat kustomize/deploy.yaml
+                            sed -i 's+docker.amoylabs.com:30500/sfe4j:.*+docker.amoylabs.com:30500/sfe4j:${BUILD_NUMBER}+g' kustomize/deploy.yaml
+                            echo "New Version"
+                            cat kustomize/deploy.yaml
+
+                            git add kustomize/deploy.yaml
+                            git commit -m "feat: Upgrade version to ${BUILD_NUMBER}"
+                            git push origin master
+                        """
                     }
                 }
             }
