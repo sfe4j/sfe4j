@@ -1,6 +1,6 @@
 # SFE4J configuration
 sfe4j:
-  base-dir-path: "/"
+  base-dir-path: "/data"
   restrict-to-base-dir: false
   title: "SFE4J Demo"
   description: "Simple File Explorer for spring-boot based Java Web Application."
