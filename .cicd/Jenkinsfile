@@ -10,6 +10,7 @@ pipeline {
                   containers:
                   - name: maven
                     image: maven:3.8.4-openjdk-17
+                    imagePullPolicy: IfNotPresent
                     command:
                     - sleep
                     args: 
@@ -19,6 +20,7 @@ pipeline {
                       mountPath: /root/.m2
                   - name: docker
                     image: docker:latest
+                    imagePullPolicy: IfNotPresent
                     command:
                     - cat
                     tty: true
@@ -26,7 +28,8 @@ pipeline {
                     - mountPath: /var/run/docker.sock
                       name: docker-sock
                   - name: git
-                    image: alpine/git
+                    image: alpine/git:latest
+                    imagePullPolicy: IfNotPresent
                     command:
                     - sleep
                     args: 
