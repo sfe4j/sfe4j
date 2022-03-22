@@ -69,7 +69,7 @@ sfe4j:
 
 ## Demo
 ### Live demo
-Link: https://backoffice.amoylabs.com:8443/file-explorer
+Link: https://sfe4j.amoylabs.com:30443/file-explorer
 
 ### Screenshot
 ![sfe4j demo screenshot](https://raw.githubusercontent.com/sfe4j/assets-repo/main/sfe4j-demo.png)
