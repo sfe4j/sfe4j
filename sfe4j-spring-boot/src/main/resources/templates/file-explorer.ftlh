@@ -153,5 +153,14 @@
         $('[data-toggle="tooltip"]').tooltip();
     });
 </script>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FWEV2G1WG5"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-FWEV2G1WG5');
+</script>
 </body>
 </html>
