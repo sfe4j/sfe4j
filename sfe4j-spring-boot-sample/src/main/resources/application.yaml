@@ -8,11 +8,8 @@ spring:
     admin:
       client:
         url: https://spring-boot-admin.amoylabs.com:30443
-        instance:
-          service-base-url: https://sfe4j-demo.amoylabs.com:30443
 
 management:
-  port: 30443
   endpoints:
     web:
       exposure:
