@@ -9,7 +9,7 @@ spring:
       client:
         url: https://spring-boot-admin.amoylabs.com:30443
         instance:
-          prefer-ip: true
+          service-host-type: IP
 
 management:
   endpoints:
