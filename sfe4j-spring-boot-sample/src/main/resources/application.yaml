@@ -1,3 +1,22 @@
+spring:
+  application:
+    name: "sfe4j-demos"
+  boot:
+    admin:
+      client:
+        url: https://spring-boot-admin.amoylabs.com:30443
+        instance:
+          service-base-url: https://sfe4j-demo.amoylabs.com:30443
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
 # SFE4J configuration
 sfe4j:
   base-dir-path: "/data"
