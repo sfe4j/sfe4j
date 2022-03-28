@@ -73,7 +73,7 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
-                        docker build -t docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER -f .cicd/Dockerfile .
+                        docker build -t docker.amoylabs.com:30500/sfe4j/sfe4j-demo:$BUILD_NUMBER -f .cicd/Dockerfile .
                     """
                 }
             }
@@ -83,7 +83,7 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
-                        docker push docker.amoylabs.com:30500/sfe4j:$BUILD_NUMBER
+                        docker push docker.amoylabs.com:30500/sfe4j/sfe4j-demo:$BUILD_NUMBER
                     """
                 }
             }
@@ -107,7 +107,7 @@ pipeline {
 
                             echo "Current Version"
                             cat kustomize/deploy.yaml
-                            sed -i 's+docker.amoylabs.com:30500/sfe4j:.*+docker.amoylabs.com:30500/sfe4j:${BUILD_NUMBER}+g' kustomize/deploy.yaml
+                            sed -i 's+docker.amoylabs.com:30500/sfe4j/sfe4j-demo:.*+docker.amoylabs.com:30500/sfe4j/sfe4j-demo:${BUILD_NUMBER}+g' kustomize/deploy.yaml
                             echo "New Version"
                             cat kustomize/deploy.yaml
 

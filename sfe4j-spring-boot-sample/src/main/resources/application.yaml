@@ -1,6 +1,6 @@
 spring:
   application:
-    name: "sfe4j-demos"
+    name: "sfe4j-demo"
   boot:
     admin:
       client:
