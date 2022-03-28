@@ -8,6 +8,8 @@ spring:
     admin:
       client:
         url: https://spring-boot-admin.amoylabs.com:30443
+        instance:
+          prefer-ip: true
 
 management:
   endpoints:
