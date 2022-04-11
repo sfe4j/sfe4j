@@ -11,7 +11,7 @@ sfe4j:
   base-dir-path: ${BASE_DIR_PATH:/data}
   restrict-to-base-dir: ${RESTRICT_TO_BASE_DIR:false}
   title: ${TITLE:SFE4J}
-  description: ${DESCRIPTION:"Simple File Explorer for spring-boot based Java Web Application."}
+  description: ${DESCRIPTION:Simple File Explorer for spring-boot based Java Web Application.}
   quick-links:
     root: /
     logs: /data/logs
