@@ -1,12 +1,10 @@
 # SFE4J
-
 [![Java CI with Maven](https://github.com/sfe4j/sfe4j/actions/workflows/java-maven.yml/badge.svg)](https://github.com/sfe4j/sfe4j/actions/workflows/java-maven.yml)
 [![License](https://img.shields.io/github/license/sfe4j/sfe4j?logo=gnu)](https://github.com/sfe4j/sfe4j/blob/master/LICENSE)
 
 Simple File Explorer for spring-boot based Java Web Application.
 
 ## Features
-
 - List the directories/files in a specific directory, include detailed information:
   * Permission
   * Size
@@ -30,7 +28,6 @@ Add the below repository configuration to `pom.xml` of your project or `settings
     <url>https://raw.github.com/sfe4j/mvn-repo/master</url>
 </repository>
 ```
-
 #### Add dependencies
 Add the below dependency configuration to `pom.xml` of your project.
 ```xml
@@ -44,13 +41,11 @@ Latest Version:
 ```xml
     <sfe4j-spring-boot-starter-version>0.0.8</sfe4j-spring-boot-starter-version>
 ```
-
 #### Configure properties
 ##### prefix
 ```properties
 sfe4j
 ```
-
 ##### properties
 |  key   | allowed value  | default value | description |
 |  ----  | ----  | ---- | ---- |
@@ -59,7 +54,6 @@ sfe4j
 | quick-links | Map | N/A | Quick links showed on top-left of the file-explorer page, e.g. <br> root: "/" <br> logs: "/data/logs"|
 | base-dir-path | String | "/" | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
 | restrict-to-base-dir | Boolean | false | Whether restrict the access to base directory only or not. |
-
 ##### example
 ```properties
 sfe4j:
@@ -71,7 +65,6 @@ sfe4j:
   base-dir-path: "/data"
   restrict-to-base-dir: true
 ```
-
 #### Entrypoint
 ```
 http://localhost:8080/file-explorer
@@ -79,7 +72,6 @@ http://localhost:8080/file-explorer
 
 ### Scenario 2. Deploy sfe4j to docker
 sfe4j was deployed to docker hub. Please refer to: https://hub.docker.com/r/sfe4j/sfe4j
-
 #### Example Command to run sfe4j in docker
 ```shell
 docker run -d -p28080:28080 sfe4j/sfe4j
