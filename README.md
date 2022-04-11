@@ -21,7 +21,8 @@ Simple File Explorer for spring-boot based Java Web Application.
 - More features are coming ...
 
 ## Usage
-### Add repositories
+### Scenario 1 Integrate sfe4j to spring-boot based applications
+#### Add repositories
 Add the below repository configuration to `pom.xml` of your project or `settings.xml` of Maven.
 ```xml
 <repository>
@@ -30,7 +31,7 @@ Add the below repository configuration to `pom.xml` of your project or `settings
 </repository>
 ```
 
-### Add dependencies
+#### Add dependencies
 Add the below dependency configuration to `pom.xml` of your project.
 ```xml
 <dependency>
@@ -44,13 +45,13 @@ Latest Version:
     <sfe4j-spring-boot-starter-version>0.0.8</sfe4j-spring-boot-starter-version>
 ```
 
-### Configure properties
-#### prefix
+#### Configure properties
+##### prefix
 ```properties
 sfe4j
 ```
 
-#### properties
+##### properties
 |  key   | allowed value  | default value | description |
 |  ----  | ----  | ---- | ---- |
 | title | String | "SFE4J" | Title of the file-explorer page. |
@@ -59,7 +60,7 @@ sfe4j
 | base-dir-path | String | "/" | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
 | restrict-to-base-dir | Boolean | false | Whether restrict the access to base directory only or not. |
 
-#### example
+##### example
 ```properties
 sfe4j:
   title: "SFE4J Demo"
@@ -70,6 +71,42 @@ sfe4j:
   base-dir-path: "/data"
   restrict-to-base-dir: true
 ```
+
+### Scenario 2 Deploy sfe4j to docker
+#### Command
+```shell
+docker run -d -p28080:28080 sfe4j/sfe4j
+```
+#### Environment Variables
+|  key   | allowed value                                                      | default value                                                      | description                                                                  |
+|  ----  |--------------------------------------------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------|
+| TITLE | String                                                             | "SFE4J"                                                            | Title of the file-explorer pag.                                              |
+| DESCRIPTION | String                                                             | "Simple File Explorer for spring-boot based Java Web Application." | Description of the file-explorer page.                                       |
+| BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
+| RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
+
+### Scenario 3 Deploy sfe4j as a sidecar of applications in Kubernetes 
+#### Examples
+```yaml
+      containers:
+        - name: sfe4j
+          image: sfe4j/sfe4j
+          ports:
+            - name: http
+              containerPort: 28080
+          env:
+            - name: TITLE
+              value: "SFE4J"
+            - name: BASE_DIR_PATH
+              value: "/data"
+```
+#### Environment Variables
+|  key   | allowed value                                                      | default value                                                      | description                                                                  |
+|  ----  |--------------------------------------------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------|
+| TITLE | String                                                             | "SFE4J"                                                            | Title of the file-explorer pag.                                              |
+| DESCRIPTION | String                                                             | "Simple File Explorer for spring-boot based Java Web Application." | Description of the file-explorer page.                                       |
+| BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
+| RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
 
 ## Demo
 ### Live demo
