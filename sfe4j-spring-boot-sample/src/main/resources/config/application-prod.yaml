@@ -1,9 +1,0 @@
-# SFE4J configuration
-sfe4j:
-  base-dir-path: ${BASE_DIR_PATH}
-  restrict-to-base-dir: ${RESTRICT_TO_BASE_DIR}
-  title: ${TITLE}
-  description: ${DESCRIPTION}
-  quick-links:
-    root: /
-    logs: /data/logs
