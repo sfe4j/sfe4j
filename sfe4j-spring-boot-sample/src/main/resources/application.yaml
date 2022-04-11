@@ -1,35 +1,6 @@
 server:
   port: 28080
 
-spring:
-  application:
-    name: "sfe4j-demo"
-  boot:
-    admin:
-      client:
-        url: https://spring-boot-admin.amoylabs.com:30443
-        instance:
-          service-host-type: IP
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-# SFE4J configuration
-sfe4j:
-  base-dir-path: "/data"
-  restrict-to-base-dir: false
-  title: "SFE4J Demo"
-  description: "Simple File Explorer for spring-boot based Java Web Application."
-  quick-links:
-    root: /
-    logs: /data/logs
-
 # Logging
 logging:
   file:

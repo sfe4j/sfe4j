@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: "sfe4j-demo"
+  boot:
+    admin:
+      client:
+        url: https://spring-boot-admin.amoylabs.com:30443
+        instance:
+          service-host-type: IP
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
