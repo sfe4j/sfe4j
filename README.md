@@ -72,18 +72,24 @@ sfe4j:
   restrict-to-base-dir: true
 ```
 
+#### Entrypoint
+```
+http://localhost:8080/file-explorer
+```
+
 ### Scenario 2. Deploy sfe4j to docker
-#### Command
+sfe4j was deployed to docker hub. Please refer to: https://hub.docker.com/r/sfe4j/sfe4j
+
+#### Example Command to run sfe4j in docker
 ```shell
 docker run -d -p28080:28080 sfe4j/sfe4j
 ```
+#### Example URL to access SFE4J
+```
+http://localhost:28080/file-explorer
+```
 #### Environment Variables
-|  key   | allowed value                                                      | default value                                                      | description                                                                  |
-|  ----  |--------------------------------------------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------|
-| TITLE | String                                                             | "SFE4J"                                                            | Title of the file-explorer pag.                                              |
-| DESCRIPTION | String                                                             | "Simple File Explorer for spring-boot based Java Web Application." | Description of the file-explorer page.                                       |
-| BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
-| RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
+Please refer to https://hub.docker.com/r/sfe4j/sfe4j for all availabe environment variables.
 
 ### Scenario 3. Deploy sfe4j as a sidecar of applications in Kubernetes 
 #### Examples
@@ -100,13 +106,12 @@ docker run -d -p28080:28080 sfe4j/sfe4j
             - name: BASE_DIR_PATH
               value: "/data"
 ```
+#### Example URL to access SFE4J
+```
+http://INGRESS_HOST:INGRESS_PORT/file-explorer
+```
 #### Environment Variables
-|  key   | allowed value                                                      | default value                                                      | description                                                                  |
-|  ----  |--------------------------------------------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------|
-| TITLE | String                                                             | "SFE4J"                                                            | Title of the file-explorer pag.                                              |
-| DESCRIPTION | String                                                             | "Simple File Explorer for spring-boot based Java Web Application." | Description of the file-explorer page.                                       |
-| BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
-| RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
+Please refer to https://hub.docker.com/r/sfe4j/sfe4j for all availabe environment variables.
 
 ## Demo
 ### Live demo
