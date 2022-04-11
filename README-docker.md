@@ -26,10 +26,12 @@ docker run -d -p28080:28080 sfe4j/sfe4j
 
 #### Environment Variables
 
-* `TITLE` - Title of the file-explorer pag. Default value: *SFE4J*.
-* `DESCRIPTION` - Description of the file-explorer page. Default value: *Simple File Explorer for spring-boot based Java Web Application.*.
-* `BASE_DIR_PATH` - Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. Default value: */*.
-* `RESTRICT_TO_BASE_DIR` - Whether restrict the access to base directory only or not. Default value: *false*.
+|  key   | allowed value                                                      | default value                                                      | description                                                                  |
+|  ----  |--------------------------------------------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------------------|
+| TITLE | String                                                             | "SFE4J"                                                            | Title of the file-explorer pag.                                              |
+| DESCRIPTION | String                                                             | "Simple File Explorer for spring-boot based Java Web Application." | Description of the file-explorer page.                                       |
+| BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
+| RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
 
 #### Volumes
 
@@ -53,7 +55,7 @@ docker run -d -p28080:28080 sfe4j/sfe4j
 Please read [CONTRIBUTING.md](https://github.com/sfe4j/sfe4j#contributing) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
-
+-
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the
 [tags on this repository](https://github.com/sfe4j/sfe4j/tags).
 
