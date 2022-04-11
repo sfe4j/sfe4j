@@ -26,10 +26,10 @@ docker run sfe4j/sfe4j -p 28080:28080
 
 #### Environment Variables
 
-* `TITLE` - Title of the file-explorer pag. Default value: `SFE4J`.
-* `DESCRIPTION` - Description of the file-explorer page. Default value: `Simple File Explorer for spring-boot based Java Web Application.`.
-* `BASE_DIR_PATH` - Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. Default value: `/`.
-* `RESTRICT_TO_BASE_DIR` - Whether restrict the access to base directory only or not. Default value: `false`.
+* `TITLE` - Title of the file-explorer pag. Default value: *SFE4J*.
+* `DESCRIPTION` - Description of the file-explorer page. Default value: *Simple File Explorer for spring-boot based Java Web Application.*.
+* `BASE_DIR_PATH` - Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. Default value: */*.
+* `RESTRICT_TO_BASE_DIR` - Whether restrict the access to base directory only or not. Default value: *false*.
 
 #### Volumes
 
@@ -50,7 +50,7 @@ docker run sfe4j/sfe4j -p 28080:28080
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/sfe4j/sfe4j#contributing) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -66,7 +66,7 @@ participated in this project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE.md](https://github.com/sfe4j/sfe4j/blob/master/LICENSE) file for details.
 
 ## Acknowledgments
 
