@@ -21,7 +21,7 @@ Simple File Explorer for spring-boot based Java Web Application.
 - More features are coming ...
 
 ## Usage
-### Scenario 1 Integrate sfe4j to spring-boot based applications
+### Scenario 1. Integrate sfe4j to spring-boot based applications
 #### Add repositories
 Add the below repository configuration to `pom.xml` of your project or `settings.xml` of Maven.
 ```xml
@@ -72,7 +72,7 @@ sfe4j:
   restrict-to-base-dir: true
 ```
 
-### Scenario 2 Deploy sfe4j to docker
+### Scenario 2. Deploy sfe4j to docker
 #### Command
 ```shell
 docker run -d -p28080:28080 sfe4j/sfe4j
@@ -85,7 +85,7 @@ docker run -d -p28080:28080 sfe4j/sfe4j
 | BASE_DIR_PATH | String                                                             | "/"                                                                | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
 | RESTRICT_TO_BASE_DIR | Boolean | false | Whether restrict the access to base directory only or not.                   |
 
-### Scenario 3 Deploy sfe4j as a sidecar of applications in Kubernetes 
+### Scenario 3. Deploy sfe4j as a sidecar of applications in Kubernetes 
 #### Examples
 ```yaml
       containers:
