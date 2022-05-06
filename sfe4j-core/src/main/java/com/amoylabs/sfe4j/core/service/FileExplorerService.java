@@ -30,6 +30,10 @@ public class FileExplorerService {
 
         File currentDirectory = new File(currentDirectoryPath);
 
+        if (sfe4jConfiguration.getRestrictToBaseDir() && !isWithinBase(currentDirectory)) {
+            currentDirectory = new File(sfe4jConfiguration.getBaseDirPath());
+        }
+
         Set<FileVO> childDirectories = new TreeSet<>();
         Set<FileVO> files = new TreeSet<>();
 

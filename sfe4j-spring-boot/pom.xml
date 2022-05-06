@@ -5,7 +5,7 @@
 
     <groupId>com.amoylabs</groupId>
     <artifactId>sfe4j-spring-boot</artifactId>
-    <version>0.0.8</version>
+    <version>0.0.9</version>
     <name>sfe4j-spring-boot</name>
     <description>Demo project for Spring Boot</description>
 
@@ -16,6 +16,7 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <spring-boot.version>2.5.0</spring-boot.version>
+        <sfe4j-core.version>0.0.9</sfe4j-core.version>
     </properties>
 
     <dependencies>
@@ -38,7 +39,7 @@
         <dependency>
             <groupId>com.amoylabs</groupId>
             <artifactId>sfe4j-core</artifactId>
-            <version>0.0.8</version>
+            <version>${sfe4j-core.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
