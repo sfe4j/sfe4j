@@ -1,4 +1,7 @@
 pipeline {
+    options {
+        ansiColor('xterm')
+    }
 
     agent {
         kubernetes {
@@ -18,15 +21,12 @@ pipeline {
                     volumeMounts:
                     - name: m2-persistent-storage
                       mountPath: /root/.m2
-                  - name: docker
-                    image: docker:latest
+                  - name: kaniko
+                    image: gcr.io/kaniko-project/executor:v1.8.1-debug
                     imagePullPolicy: IfNotPresent
                     command:
-                    - cat
+                    - /busybox/cat
                     tty: true
-                    volumeMounts:
-                    - mountPath: /var/run/docker.sock
-                      name: docker-sock
                   - name: git
                     image: alpine/git:latest
                     imagePullPolicy: IfNotPresent
@@ -39,9 +39,6 @@ pipeline {
                     - name: m2-persistent-storage
                       persistentVolumeClaim:
                         claimName: maven
-                    - name: docker-sock
-                      hostPath:
-                        path: /var/run/docker.sock
                 '''
         }
     }
@@ -69,22 +66,21 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build&Push Image') {
             steps {
-                container('docker') {
-                    sh """
-                        docker build -t docker.amoylabs.com:30500/sfe4j/sfe4j-demo:$BUILD_NUMBER -f .cicd/Dockerfile .
-                    """
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                container('docker') {
-                    sh """
-                        docker push docker.amoylabs.com:30500/sfe4j/sfe4j-demo:$BUILD_NUMBER
-                    """
+                container(name: 'kaniko', shell: '/busybox/sh') {
+                    withEnv(['PATH+EXTRA=/busybox']) {
+                        sh '''#!/busybox/sh -xe
+                            /kaniko/executor \
+                            --dockerfile .cicd/Dockerfile \
+                            --context `pwd`/ \
+                            --verbosity debug \
+                            --insecure \
+                            --skip-tls-verify \
+                            --destination docker.amoylabs.com:30500/sfe4j/sfe4j-demo:$BUILD_NUMBER \
+                            --destination docker.amoylabs.com:30500/sfe4j/sfe4j-demo:latest
+                        '''
+                    }
                 }
             }
         }
