@@ -9,6 +9,8 @@
 
     <!-- Bootstrap -->
     <link href="${ctx}/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery Data Table -->
+    <link href="${ctx}/css/dataTables.bootstrap.min.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -54,86 +56,84 @@
 
     <div class="row">
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <table class="table table-hover">
-                    <thead>
+            <table id="files" class="table table-hover table-striped table-bordered" style="width:100%">
+                <thead>
+                <tr>
+                    <th class="col-md-6">Name</th>
+                    <th>Permission</th>
+                    <th>Size&nbsp;</th>
+                    <th>Date Modified</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <#if fileTree.parentDirectory??>
+                    <#assign parentDirectory = fileTree.parentDirectory >
                     <tr>
-                        <th class="col-md-6">Name</th>
-                        <th>Permission</th>
-                        <th>Size&nbsp;</th>
-                        <th>Date Modified</th>
-                        <th>Actions</th>
+                        <td>
+                            <span class="glyphicon glyphicon-arrow-up"></span>
+                            <#if parentDirectory.readable>
+                                <a href="?dir=${parentDirectory.fullName}"
+                                   data-toggle="tooltip" data-placement="right" title="View Parent Directory">Parent
+                                    Directory</a>
+                            <#else>
+                                Parent Directory
+                            </#if>
+                        </td>
+                        <td>${parentDirectory.accessAttributes}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
-                    </thead>
+                </#if>
 
-                    <#if fileTree.parentDirectory??>
-                        <#assign parentDirectory = fileTree.parentDirectory >
-                        <tr>
-                            <td>
-                                <span class="glyphicon glyphicon-arrow-up"></span>
-                                <#if parentDirectory.readable>
-                                    <a href="?dir=${parentDirectory.fullName}"
-                                       data-toggle="tooltip" data-placement="right" title="View Parent Directory">Parent
-                                        Directory</a>
-                                <#else>
-                                    Parent Directory
-                                </#if>
-                            </td>
-                            <td>${parentDirectory.accessAttributes}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </#if>
+                <#assign childDirectories = fileTree.childDirectories >
+                <#list childDirectories as childDirectory>
+                    <tr>
+                        <td>
+                            <span class="glyphicon glyphicon-folder-close"></span>
+                            <#if childDirectory.readable>
+                                <a href="?dir=${childDirectory.fullName}"
+                                   data-toggle="tooltip" data-placement="right"
+                                   title="View '${childDirectory.name}' Folder">${childDirectory.name}</a>
+                            <#else>
+                                ${childDirectory.name}
+                            </#if>
+                        </td>
+                        <td>${childDirectory.accessAttributes}</td>
+                        <td></td>
+                        <td>${childDirectory.dateTime}</td>
+                        <td></td>
+                    </tr>
+                </#list>
 
-                    <#assign childDirectories = fileTree.childDirectories >
-                    <#list childDirectories as childDirectory>
-                        <tr>
-                            <td>
-                                <span class="glyphicon glyphicon-folder-close"></span>
-                                <#if childDirectory.readable>
-                                    <a href="?dir=${childDirectory.fullName}"
-                                       data-toggle="tooltip" data-placement="right"
-                                       title="View '${childDirectory.name}' Folder">${childDirectory.name}</a>
-                                <#else>
-                                    ${childDirectory.name}
-                                </#if>
-                            </td>
-                            <td>${childDirectory.accessAttributes}</td>
-                            <td></td>
-                            <td>${childDirectory.dateTime}</td>
-                            <td></td>
-                        </tr>
-                    </#list>
-
-                    <#assign files = fileTree.files >
-                    <#list files as file>
-                        <tr>
-                            <td>
-                                <span class="glyphicon glyphicon-file"></span>
-                                <#if file.readable && (file.name?ends_with(".txt") || file.name?ends_with(".log") || file.name?ends_with(".html") || file.name?ends_with(".htm"))>
-                                    <a href="${ctx}/file-viewer?file=${file.fullName}"
-                                       data-toggle="tooltip" data-placement="right"
-                                       title="View '${file.name}'">${file.name}</a>
-                                <#else>
-                                    ${file.name}
-                                </#if>
-                            </td>
-                            <td>${file.accessAttributes}</td>
-                            <td>${file.size}</td>
-                            <td>${file.dateTime}</td>
-                            <td>
-                                <#if file.readable>
-                                    <a class="btn btn-xs btn-info" href="${ctx}/file-downloader?file=${file.fullName}"
-                                       target="_blank"
-                                       title="Download '${file.name}'" data-toggle="tooltip" data-placement="right"
-                                       data-original-title="Download '${file.name}'">Download</a>
-                                </#if>
-                            </td>
-                        </tr>
-                    </#list>
-                </table>
-            </div>
+                <#assign files = fileTree.files >
+                <#list files as file>
+                    <tr>
+                        <td>
+                            <span class="glyphicon glyphicon-file"></span>
+                            <#if file.readable && (file.name?ends_with(".txt") || file.name?ends_with(".log") || file.name?ends_with(".html") || file.name?ends_with(".htm"))>
+                                <a href="${ctx}/file-viewer?file=${file.fullName}"
+                                   data-toggle="tooltip" data-placement="right"
+                                   title="View '${file.name}'">${file.name}</a>
+                            <#else>
+                                ${file.name}
+                            </#if>
+                        </td>
+                        <td>${file.accessAttributes}</td>
+                        <td>${file.size}</td>
+                        <td>${file.dateTime}</td>
+                        <td>
+                            <#if file.readable>
+                                <a class="btn btn-xs btn-info" href="${ctx}/file-downloader?file=${file.fullName}"
+                                   target="_blank"
+                                   title="Download '${file.name}'" data-toggle="tooltip" data-placement="right"
+                                   data-original-title="Download '${file.name}'">Download</a>
+                            </#if>
+                        </td>
+                    </tr>
+                </#list>
+            </table>
         </div>
     </div>
 
@@ -144,13 +144,20 @@
 </div> <!-- /container -->
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-<script src="${ctx}/js/jquery.min.js"></script>
+<script src="${ctx}/js/jquery-3.7.0.js"></script>
 <!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="${ctx}/bootstrap/js/bootstrap.min.js"></script>
+<!-- Jquery Data Table -->
+<script src="${ctx}/js/jquery.dataTables.min.js"></script>
+<script src="${ctx}/js/dataTables.bootstrap.min.js"></script>
 
 <script type="text/javascript">
     $(document).ready(function () {
         $('[data-toggle="tooltip"]').tooltip();
+
+        $('#files').DataTable( {
+            paging: false
+        } );
     });
 </script>
 <!-- Global site tag (gtag.js) - Google Analytics -->
