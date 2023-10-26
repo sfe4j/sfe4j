@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.amoylabs</groupId>
     <artifactId>sfe4j-spring-boot-sample</artifactId>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <name>sfe4j-spring-boot-sample</name>
     <description>Demo project for Spring Boot</description>
 
@@ -19,7 +19,7 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <spring-boot-admin.version>2.6.2</spring-boot-admin.version>
-        <sfe4j-spring-boot-starter-version>0.0.9</sfe4j-spring-boot-starter-version>
+        <sfe4j-spring-boot-starter-version>0.0.10</sfe4j-spring-boot-starter-version>
     </properties>
 
     <dependencyManagement>
