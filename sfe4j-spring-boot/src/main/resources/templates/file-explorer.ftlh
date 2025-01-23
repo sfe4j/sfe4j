@@ -138,7 +138,7 @@
     </div>
 
     <footer class="footer">
-        <p>♥ Lovely made by <a href="https://github.com/guuuuo" target="_blank">N_G</a></p>
+        <p>♥ Lovely made by <a href="https://github.com/sfe4j" target="_blank">SFE4J</a></p>
     </footer>
 
 </div> <!-- /container -->
