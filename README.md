@@ -107,7 +107,7 @@ Please refer to https://hub.docker.com/r/sfe4j/sfe4j for all availabe environmen
 
 ## Demo
 ### Live demo
-Link: https://sfe4j-demo.amoylabs.com:30443/file-explorer
+Link: https://sfe4j-demo.amoylabs.com/file-explorer
 
 ### Screenshot
 ![sfe4j demo screenshot](https://raw.githubusercontent.com/sfe4j/assets-repo/main/sfe4j-demo.png)
