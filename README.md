@@ -39,7 +39,7 @@ Add the below dependency configuration to `pom.xml` of your project.
 ```
 Latest Version:
 ```xml
-    <sfe4j-spring-boot-starter-version>1.0.0</sfe4j-spring-boot-starter-version>
+    <sfe4j-spring-boot-starter-version>1.0.1</sfe4j-spring-boot-starter-version>
 ```
 #### Configure properties
 ##### prefix
