@@ -2,12 +2,12 @@ package com.amoylabs.sfe4j.spring.boot.starter;
 
 import com.amoylabs.sfe4j.core.configuration.Sfe4jConfiguration;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(Sfe4jProperties.class)
 @ComponentScan(
         basePackages = {"com.amoylabs.sfe4j.spring.boot"}
