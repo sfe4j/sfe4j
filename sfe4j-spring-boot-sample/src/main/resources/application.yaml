@@ -1,5 +1,5 @@
 server:
-  port: 28080
+  port: 8080
 
 # Logging
 logging:

@@ -18,10 +18,10 @@ In order to run this container you'll need docker installed.
 
 #### Exposed Port
 
-sfe4j/sfe4j expose port at `28080` by default.
+sfe4j/sfe4j expose port at `8080` by default.
 
 ```shell
-docker run -d -p28080:28080 sfe4j/sfe4j
+docker run -d -p8080:8080 sfe4j/sfe4j
 ```
 
 #### Environment Variables

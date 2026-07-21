@@ -74,11 +74,11 @@ http://localhost:8080/file-explorer
 sfe4j was deployed to docker hub. Please refer to: https://hub.docker.com/r/sfe4j/sfe4j
 #### Example Command to run sfe4j in docker
 ```shell
-docker run -d -p28080:28080 sfe4j/sfe4j
+docker run -d -p8080:8080 sfe4j/sfe4j
 ```
 #### Example URL to access SFE4J
 ```
-http://localhost:28080/file-explorer
+http://localhost:8080/file-explorer
 ```
 #### Environment Variables
 Please refer to https://hub.docker.com/r/sfe4j/sfe4j for all availabe environment variables.
@@ -91,7 +91,7 @@ Please refer to https://hub.docker.com/r/sfe4j/sfe4j for all availabe environmen
           image: sfe4j/sfe4j
           ports:
             - name: http
-              containerPort: 28080
+              containerPort: 8080
           env:
             - name: TITLE
               value: "SFE4J"
