@@ -8,8 +8,9 @@ on:
     branches: [ master ]
 
 env:
-  REGISTRY: cr.amoylabs.com
-  IMAGE_NAME: sfe4j/sfe4j-demo
+  PRIVATE_REGISTRY: cr.amoylabs.com
+  PRIVATE_IMAGE_NAME: sfe4j/sfe4j-demo
+  DOCKERHUB_IMAGE_NAME: sfe4j/sfe4j
   JAVA_VERSION: '25'
 
 jobs:
@@ -93,12 +94,18 @@ jobs:
           name: app-jar
           path: sfe4j-spring-boot-sample/target/
 
-      - name: Log in to Container Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Log in to Private Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.PRIVATE_REGISTRY }}
+          username: ${{ secrets.PRIVATE_REGISTRY_USERNAME }}
+          password: ${{ secrets.PRIVATE_REGISTRY_PASSWORD }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -107,9 +114,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: |
+            ${{ env.PRIVATE_REGISTRY }}/${{ env.PRIVATE_IMAGE_NAME }}
+            ${{ env.DOCKERHUB_IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ github.run_number }}
+            type=raw,value=1.0.${{ github.run_number }}
             type=raw,value=latest
 
       - name: Build and push
