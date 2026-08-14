@@ -1,5 +1,5 @@
 # SFE4J
-[![CI Status](https://github.com/sfe4j/sfe4j/actions/workflows/ci.yml/badge.svg)](https://github.com/sfe4j/sfe4j/actions/workflows/ci.yml)
+[![CI Status](https://github.com/sfe4j/sfe4j/actions/workflows/ci.yaml/badge.svg)](https://github.com/sfe4j/sfe4j/actions/workflows/ci.yaml)
 [![License](https://img.shields.io/github/license/sfe4j/sfe4j?logo=gnu)](https://github.com/sfe4j/sfe4j/blob/master/LICENSE)
 
 Simple File Explorer for spring-boot based Java Web Application.
