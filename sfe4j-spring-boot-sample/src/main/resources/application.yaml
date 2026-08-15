@@ -16,4 +16,4 @@ sfe4j:
     root: /
     logs: /data/logs
   folder-passwords:
-    /root: root
+    "[/root]": root
