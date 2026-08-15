@@ -37,11 +37,14 @@ public class FileExplorerService {
         Set<FileVO> childDirectories = new TreeSet<>();
         Set<FileVO> files = new TreeSet<>();
 
-        for (File file : currentDirectory.listFiles()) {
-            if (file.isDirectory()) {
-                childDirectories.add(new FileVO(file));
-            } else {
-                files.add(new FileVO(file));
+        File[] fileList = currentDirectory.listFiles();
+        if (fileList != null) {
+            for (File file : fileList) {
+                if (file.isDirectory()) {
+                    childDirectories.add(new FileVO(file));
+                } else {
+                    files.add(new FileVO(file));
+                }
             }
         }
 
