@@ -16,6 +16,7 @@ Simple File Explorer for spring-boot based Java Web Application.
 - Can restrict the access to a specified directory
 - Can configure title/description of the page
 - Can configure quick links  
+- Can configure password protection for specific directories
 - More features are coming ...
 
 ## Usage
@@ -54,6 +55,7 @@ sfe4j
 | quick-links | Map | N/A | Quick links showed on top-left of the file-explorer page, e.g. <br> root: "/" <br> logs: "/data/logs"|
 | base-dir-path | String | "/" | Full path of base directory, e.g. "c:/" for Windows, "/" for Linux or MacOS. |
 | restrict-to-base-dir | Boolean | false | Whether restrict the access to base directory only or not. |
+| folder-passwords | Map | N/A | Passwords for folder protection. Key is folder path, value is password. Note: use brackets for paths in yaml, e.g. `"[root]": "password"` |
 ##### example
 ```properties
 sfe4j:
@@ -64,6 +66,8 @@ sfe4j:
     logs: "/data/logs"
   base-dir-path: "/data"
   restrict-to-base-dir: true
+  folder-passwords:
+    "[/data/secret]": "my_password"
 ```
 #### Entrypoint
 ```
