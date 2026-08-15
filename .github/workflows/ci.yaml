@@ -1,5 +1,5 @@
 name: CI/CD Pipeline
-run-name: "${{ github.event_name == 'workflow_dispatch' && format('CI/CD Pipeline triggered on {0} (Docker: {1})', github.ref_name, inputs.build_image == true && 'yes' || 'no') || github.event.pull_request.title || github.event.head_commit.message || github.sha }}"
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('CI/CD Pipeline (Docker: {0})', inputs.build_image == true && 'yes' || 'no') || github.event.pull_request.title || github.event.head_commit.message || github.sha }}"
 
 on:
   workflow_dispatch:
