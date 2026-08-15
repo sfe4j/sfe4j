@@ -32,6 +32,11 @@ public class Sfe4jProperties {
      */
     private Boolean restrictToBaseDir;
 
+    /**
+     * Passwords for folder protection. Key is folder path, value is password.
+     */
+    private Map<String, String> folderPasswords;
+
     public String getTitle() {
         return title;
     }
@@ -70,5 +75,13 @@ public class Sfe4jProperties {
 
     public void setRestrictToBaseDir(Boolean restrictToBaseDir) {
         this.restrictToBaseDir = restrictToBaseDir;
+    }
+
+    public Map<String, String> getFolderPasswords() {
+        return folderPasswords;
+    }
+
+    public void setFolderPasswords(Map<String, String> folderPasswords) {
+        this.folderPasswords = folderPasswords;
     }
 }

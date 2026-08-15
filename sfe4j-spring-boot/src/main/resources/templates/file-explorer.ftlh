@@ -37,6 +37,28 @@
         <p>${meta.description}</p>
     </div>
 
+    <#if requiresPassword?? && requiresPassword>
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3">
+                <div class="panel panel-default">
+                    <div class="panel-heading">Password Required</div>
+                    <div class="panel-body">
+                        <#if pwdError?? && pwdError>
+                            <div class="alert alert-danger">Incorrect password, please try again.</div>
+                        </#if>
+                        <form method="post" action="?dir=${targetDir}">
+                            <input type="hidden" name="dir" value="${targetDir}">
+                            <div class="form-group">
+                                <label for="pwd">Enter Password:</label>
+                                <input type="password" class="form-control" id="pwd" name="pwd" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <#else>
     <#assign currentDirectoryFullName = fileTree.currentDirectory.fullName >
     <ol class="breadcrumb">
         $
@@ -136,6 +158,7 @@
             </table>
         </div>
     </div>
+    </#if>
 
     <footer class="footer">
         <p>♥ Lovely made by <a href="https://github.com/sfe4j" target="_blank">SFE4J</a></p>

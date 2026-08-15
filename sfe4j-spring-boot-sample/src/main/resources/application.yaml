@@ -15,3 +15,5 @@ sfe4j:
   quick-links:
     root: /
     logs: /data/logs
+  folder-passwords:
+    /root: root

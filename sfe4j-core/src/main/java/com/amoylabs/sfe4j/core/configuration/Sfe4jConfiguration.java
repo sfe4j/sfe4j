@@ -8,6 +8,15 @@ public class Sfe4jConfiguration {
     private Map<String, String> quickLinks;
     private String baseDirPath;
     private Boolean restrictToBaseDir;
+    private Map<String, String> folderPasswords;
+
+    public Map<String, String> getFolderPasswords() {
+        return folderPasswords;
+    }
+
+    public void setFolderPasswords(Map<String, String> folderPasswords) {
+        this.folderPasswords = folderPasswords;
+    }
 
     public String getBaseDirPath() {
         return baseDirPath;

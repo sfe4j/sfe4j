@@ -22,6 +22,7 @@ public class Sfe4jAutoConfiguration {
         configuration.setQuickLinks(properties.getQuickLinks());
         configuration.setBaseDirPath(StringUtils.isNotEmpty(properties.getBaseDirPath()) ? properties.getBaseDirPath() : "/");
         configuration.setRestrictToBaseDir(properties.getRestrictToBaseDir() != null ? properties.getRestrictToBaseDir() : false);
+        configuration.setFolderPasswords(properties.getFolderPasswords());
         return configuration;
     }
 }
