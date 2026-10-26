@@ -1,6 +1,7 @@
 package com.amoylabs.sfe4j.core.vo;
 
 import com.amoylabs.sfe4j.core.exception.Sfe4jRuntimeException;
+import com.amoylabs.sfe4j.core.util.PathStrings;
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.Validate;
@@ -24,17 +25,17 @@ public class FileVO implements Comparable<FileVO> {
 
     public String getName() {
         if (this.file.getParent() == null) {
-            return this.file.getPath().replace('\\', '/');
+            return PathStrings.toUrlPath(this.file.toPath());
         }
         return this.file.getName();
     }
 
     public String getPath() {
-        return this.file.getPath().replace('\\', '/');
+        return PathStrings.toUrlPath(this.file.toPath());
     }
 
     public String getFullName() {
-        return this.file.getAbsolutePath().replace('\\', '/');
+        return PathStrings.toUrlPath(this.file.toPath().toAbsolutePath());
     }
 
     public boolean isWritable() {

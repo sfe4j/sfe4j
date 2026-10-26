@@ -1,5 +1,6 @@
 package com.amoylabs.sfe4j.core.vo;
 
+import java.util.List;
 import java.util.Set;
 
 public class FileTreeVO {
@@ -7,6 +8,15 @@ public class FileTreeVO {
     private FileVO parentDirectory;
     private Set<FileVO> childDirectories;
     private Set<FileVO> files;
+    private List<BreadcrumbVO> breadcrumbs;
+
+    public List<BreadcrumbVO> getBreadcrumbs() {
+        return breadcrumbs;
+    }
+
+    public void setBreadcrumbs(List<BreadcrumbVO> breadcrumbs) {
+        this.breadcrumbs = breadcrumbs;
+    }
 
     public FileVO getCurrentDirectory() {
         return currentDirectory;
