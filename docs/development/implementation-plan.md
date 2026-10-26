@@ -1,69 +1,82 @@
-# SFE4J 开发与验收计划
+# SFE4J Development and Acceptance Plan
 
-状态：P0 已实施（见第 2 节与 [P0 验收记录](reports/p0.md)），P1/P2 待开发。任务依赖应先于功能入口合并，阶段验收后再推广部署。
+Status: P0 is implemented (see section 2 and the [P0 acceptance record](reports/p0.md)), P1 and P2
+are still to be developed. Task dependencies are merged before the feature entry points they
+guard, and a stage is only rolled out after its acceptance.
 
-设计入口：[设计索引](../design/README.md)。
+Design entry point: [design index](../design/README.md).
 
-## 1. 开发基线
+## 1. Development baseline
 
-- JDK 25，使用实际 POM 指定版本，不在功能任务中顺带升级框架。
-- 根 POM 仅聚合；core/web/starter 的测试依赖、JUnit 5 与 Surefire 版本需逐模块显式配置或以专门构建任务统一，不能以“没有找到测试”视为通过。
-- 默认以临时目录构造测试文件。Windows 路径测试在 Windows CI 实跑；符号链接能力不可用时显式说明跳过原因。
-- 先保留行为基线测试，再加入安全回归；预期不安全的旧行为不要写成应当长期保持的断言。
-- 无全局 Maven 时，从根目录用 `(cd sfe4j-core && sh mvnw -f ../pom.xml <goal>)`；Wrapper 已验证能输出版本，不代表依赖下载或测试已成功。
+- JDK 25, using the version declared in the actual POM; framework upgrades are not part of a
+  feature task.
+- The root POM only aggregates; the test dependencies, JUnit 5 and the Surefire version of
+  core/web/starter have to be configured per module or by a dedicated build task. "No tests
+  found" never counts as a pass.
+- Build test files in a temporary directory by default. Windows path tests run on Windows CI;
+  when symbolic links are unavailable, state explicitly why a test is skipped.
+- Keep the behaviour baseline tests first, then add the security regressions; do not write an
+  expected unsafe old behaviour as an assertion that should hold forever.
+- Without a global Maven, run from the root with
+  `(cd sfe4j-core && sh mvnw -f ../pom.xml <goal>)`; a wrapper that prints its version does not
+  mean dependency downloads or tests already succeeded.
 
-## 2. P0 工作包
+## 2. P0 work packages
 
-| ID | 内容与主要落点 | 依赖 | 状态 | 完成标准 |
+| ID | Content and main landing points | Depends on | Status | Completion criteria |
 | --- | --- | --- | --- | --- |
-| P0-01 | 测试基础：各模块 POM、JUnit 5、临时文件 fixture、Windows/POSIX CI | 无 | 已完成（Windows CI 未纳入） | 各模块确实执行新测试，报告数量可核对 |
-| P0-02 | core：配置默认值与校验、PathResolver、统一异常 | P0-01 | 已完成 | 路径边界、链接、相对路径、无效配置测试通过 |
-| P0-03 | core/web：统一操作授权、旧服务方法安全委托、三个控制器接入 | P0-02 | 已完成 | 直接请求预览/下载不能绕过根限制或密码 |
-| P0-04 | web：session 授权 TTL、规则版本、限速、退出、CSRF | P0-03 | 已完成 | 授权过期/规则变化/会话失效及限速测试通过 |
-| P0-05 | core/web：有限文本、资源关闭、流式下载及有界执行器 | P0-03 | 已完成（集成基准未执行） | 大文件堆不随文件等量增长，中断后释放资源 |
-| P0-06 | web：纯文本模板、统一错误页、URL/响应头编码、面包屑 | P0-04、P0-05 | 已完成 | XSS、特殊字符、重复目录名、context path 测试通过 |
-| P0-07 | starter/sample/README：配置映射、生产示例、变更说明 | P0-06 | 已完成 | 默认值与映射测试完整，根 verify 通过 |
+| P0-01 | Test foundation: module POMs, JUnit 5, temporary file fixtures, Windows/POSIX CI | none | done (Windows CI not included) | every module really executes the new tests, report counts can be checked |
+| P0-02 | core: configuration defaults and validation, PathResolver, unified exceptions | P0-01 | done | path boundary, link, relative path and invalid configuration tests pass |
+| P0-03 | core/web: shared operation authorization, safe delegation of the old service methods, three controllers wired in | P0-02 | done | a direct preview/download request cannot bypass the root restriction or a password |
+| P0-04 | web: session grant TTL, rule version, rate limiting, logout, CSRF | P0-03 | done | grant expiry, rule change, session invalidation and rate limiting tests pass |
+| P0-05 | core/web: bounded text, resource closing, streaming download and bounded executor | P0-03 | done (integration benchmark not executed) | the heap does not grow linearly with the file, resources are released after an interrupt |
+| P0-06 | web: plain text template, unified error page, URL/header encoding, breadcrumbs | P0-04, P0-05 | done | XSS, special characters, repeated directory names and context path tests pass |
+| P0-07 | starter/sample/README: configuration mapping, production sample, change notes | P0-06 | done | default and mapping tests are complete, root verify passes |
 
-建议每项一至数个 PR；P0-03 合并时三个入口必须同时生效，不能留下临时未保护的旧读取方法。P0-05 内先提交执行器、生命周期和测试，再切换控制器响应。
+One to a few pull requests per item are expected; when P0-03 is merged the three entry points must
+become effective at the same time, no temporary unprotected old read method may remain. Inside
+P0-05, commit the executor, lifecycle and tests first, then switch the controller response.
 
-实际执行结果、与设计的偏差和未执行项记录在 [reports/p0.md](reports/p0.md)。
+The executed results, the deviations from the design and the open items are recorded in
+[reports/p0.md](reports/p0.md).
 
-## 3. P1 工作包
+## 3. P1 work packages
 
-| ID | 内容 | 依赖 | 完成标准 |
+| ID | Content | Depends on | Completion criteria |
 | --- | --- | --- | --- |
-| P1-01 | core 有界 head/tail、编码与 BOM、跨块解码 | P0-07 | 多编码、超长行、截断、二进制判断测试通过 |
-| P1-02 | web 文本 API、安全查看器、行号/换行/局部搜索 | P1-01 | 纯文本渲染，截断明确，键盘可操作 |
-| P1-03 | 跟随管理器：共享调度、配额、队列、生命周期 | P1-01 | 慢客户端与连接泄漏测试通过 |
-| P1-04 | SSE API、cursor、重连、轮转、授权失效 | P1-03 | reset/gap/append 契约与伪造游标测试通过 |
-| P1-05 | 跟随页面、暂停恢复、DOM 上限、配置与压测报告 | P1-02、P1-04 | 20 连接/30 分钟基准及中断恢复验收完成 |
+| P1-01 | core bounded head/tail, encoding and BOM, decoding across block boundaries | P0-07 | multi encoding, very long line, truncation and binary detection tests pass |
+| P1-02 | web text API, safe viewer, line numbers/newlines/partial search | P1-01 | plain text rendering, explicit truncation, keyboard operable |
+| P1-03 | follow manager: shared scheduling, quotas, queues, lifecycle | P1-01 | slow client and connection leak tests pass |
+| P1-04 | SSE API, cursor, reconnect, rotation, authorization invalidation | P1-03 | reset/gap/append contract and cursor forgery tests pass |
+| P1-05 | follow page, pause and resume, DOM cap, configuration and load test report | P1-02, P1-04 | 20 connections / 30 minutes benchmark and interrupt recovery accepted |
 
-语法高亮可作为 P1-06 后续增强，不阻塞 P1-05。先选本地资源和纯文本安全插入方式，再评估高亮库；不随意引入外部 CDN。
+Syntax highlighting can follow as P1-06 and does not block P1-05. Pick local resources and a safe
+plain text insertion first, then evaluate a highlighting library; do not pull in an external CDN.
 
-## 4. P2 工作包
+## 4. P2 work packages
 
-| ID | 内容 | 依赖 | 完成标准 |
+| ID | Content | Depends on | Completion criteria |
 | --- | --- | --- | --- |
-| P2-01 | 条件自动配置、功能开关、可替换 Bean、路由前缀及旧路由别名 | P0-07 | 条件装配、覆盖及前缀矩阵通过 |
-| P2-02 | 根目录模型、相对路径 API、旧配置适配、根级操作集 | P2-01 | 跨根、重叠根、绝对路径泄漏回归通过 |
-| P2-03 | 宿主授权 SPI、可选 Security 适配、密码哈希扩展 | P2-02 | 无依赖可运行，身份缺失/策略异常拒绝访问 |
-| P2-04 | 审计事件、结构化日志接收器、可选 fail-closed | P2-03 | 传输完成语义准确，队列有界，敏感值不出日志 |
-| P2-05 | 有界目录扫描、服务端筛选/排序/分页、页面切换 | P2-02 | 50000 条上限、稳定排序、弱一致性契约通过 |
-| P2-06 | 中英文、移除统计脚本、部署示例与可选监控 | P2-01 | 无外网可浏览，示例配置经启动验证 |
-| P2-07 | 跨功能集成：FOLLOW 与根/身份/审计组合 | P1-05、P2-04 | 授权失效终止订阅，审计汇总与配额释放正确 |
+| P2-01 | Conditional auto configuration, feature switches, replaceable beans, route prefix and old route aliases | P0-07 | conditional assembly, override and prefix matrix pass |
+| P2-02 | Root directory model, relative path API, old configuration adapter, per root operation set | P2-01 | cross root, overlapping root and absolute path leak regressions pass |
+| P2-03 | Host authorization SPI, optional Security adapter, password hash extension | P2-02 | runs without the dependency, missing identity or policy errors deny access |
+| P2-04 | Audit events, structured log sink, optional fail-closed | P2-03 | transfer completion semantics are exact, the queue is bounded, sensitive values never reach the log |
+| P2-05 | Bounded directory scan, server side filter/sort/paging, page switching | P2-02 | 50000 entry cap, stable sorting and the weak consistency contract pass |
+| P2-06 | Localization, removal statistics script, deployment samples and optional monitoring | P2-01 | browsable without internet access, sample configuration verified by startup |
+| P2-07 | Cross feature integration: FOLLOW combined with roots, identity and audit | P1-05, P2-04 | an invalidated grant stops the subscription, audit aggregation and quota release are correct |
 
-## 5. 测试分层及命令
+## 5. Test layers and commands
 
-| 层次 | 验证内容 | 实现建议 |
+| Layer | What it verifies | Implementation suggestion |
 | --- | --- | --- |
-| core 单元测试 | 路径、策略、文本读取、错误分类 | JUnit 5、临时目录、确定性时钟与可控文件夹具 |
-| MVC 测试 | 参数、session、CSRF、错误页、头、编码、文本输出 | 与实际 Boot 版本匹配的 MVC 测试配置 |
-| starter 测试 | 默认装配、属性绑定、禁用、覆盖、可选类路径 | 条件上下文测试，不依赖完整 sample 启动 |
-| 集成测试 | 真实 HTTP 下载、SSE、取消、代理缓冲表现 | 可随机端口，明确超时和清理；下载中断不能只用 MockMvc 代替 |
-| 浏览器验收 | 导航、转义、编码、DOM 限额、键盘操作 | 自动化或可复现步骤，保存失败信息 |
-| 性能/资源 | 大文件、大目录、跟随并发、句柄释放 | 独立基准，不把依赖机器性能的绝对时延写入普通单测 |
+| core unit tests | paths, policies, text reading, error classification | JUnit 5, temporary directories, deterministic clock and controllable file fixtures |
+| MVC tests | parameters, session, CSRF, error page, headers, encoding, text output | MVC test configuration matching the actual Boot version |
+| starter tests | default assembly, property binding, disabling, overrides, optional classpath | conditional context tests, not depending on a full sample startup |
+| integration tests | real HTTP download, SSE, cancellation, proxy buffering behaviour | random port allowed, explicit timeouts and cleanup; an interrupted download must not be replaced by MockMvc only |
+| browser acceptance | navigation, escaping, encoding, DOM cap, keyboard operation | automated or reproducible steps, keep failure information |
+| performance/resources | large files, large directories, follow concurrency, handle release | separate benchmark, never assert absolute timings that depend on the machine in normal unit tests |
 
-常用命令（从根目录）：
+Common commands (from the repository root):
 
 ```sh
 mvn -pl sfe4j-core -am test
@@ -72,48 +85,67 @@ mvn -pl sfe4j-spring-boot-starter -am test
 mvn verify
 ```
 
-未来增加集成测试时先显式配置 Failsafe 的 integration-test/verify 执行，再约定 `*IT` 命名；未配置之前不要声称 `mvn verify` 已自动运行所有集成测试。CI 可分为 POSIX 全量、Windows 路径与配置测试、独立基准三组；耗时基准按手动或计划执行，不阻塞每个小文档 PR。
+When integration tests are added later, configure the Failsafe `integration-test`/`verify`
+executions explicitly first and agree on the `*IT` naming; until then do not claim that
+`mvn verify` already runs every integration test. CI can be split into three groups: full POSIX,
+Windows path and configuration tests, and a separate benchmark group; long benchmarks run on
+demand or on a schedule and do not block every small documentation pull request.
 
-## 6. 阶段验收检查
+## 6. Stage acceptance checks
 
-### P0 发布门槛
+### P0 release gate
 
-- [x] 三个原入口均经过统一权限门面，旧公共方法无未授权读取通道。
-- [x] 链接、穿越、目录密码、会话过期、输出转义和下载头有回归用例。
-- [ ] 下载和预览的内存/资源行为符合 P0，记录实际执行环境及测量方式。（单元测试已覆盖有界读取与并发 429；1 GiB 堆基准与中断后句柄释放的集成测试未执行）
-- [x] 原路由、配置与非根 context path 可使用；有意行为变更进入发布说明。
-- [x] 没有把环境问题、跳过测试或零测试执行当作通过。
+- [x] The three original entry points go through the shared authorization facade, no old public
+      method offers an unauthorized read path.
+- [x] Links, traversal, directory passwords, session expiry, output escaping and download headers
+      have regression cases.
+- [ ] The memory/resource behaviour of download and preview matches P0, with the real environment
+      and measurement written down. (Unit tests cover bounded reads and concurrency 429; the 1 GiB
+      heap benchmark and handle release after an interrupt were not executed.)
+- [x] The original routes, configuration and a non-root context path still work; intentional
+      behaviour changes are in the release notes.
+- [x] No environment problem, skipped test or zero test execution was reported as a pass.
 
-### P1 发布门槛
+### P1 release gate
 
-- [ ] 限额、背压、断线、轮转、授权过期及退出流程有覆盖。
-- [ ] cursor 不能跨身份复用；缺口和截断有明确 UI 提示。
-- [ ] DOM、队列、线程和句柄均可观测且有界。
+- [ ] Quotas, back pressure, disconnects, rotation, grant expiry and logout are covered.
+- [ ] A cursor cannot be reused across identities; gaps and truncation are visible in the UI.
+- [ ] DOM, queues, threads and handles are observable and bounded.
 
-### P2 发布门槛
+### P2 release gate
 
-- [ ] 默认装配、宿主覆盖、禁用与可选认证集成组合通过。
-- [ ] 多根、旧路由及旧配置适配不形成授权旁路。
-- [ ] 审计完成/取消语义、错误处理及脱敏符合设计。
-- [ ] 分页说明真实扫描成本；超限不返回伪装完整的部分结果。
-- [ ] Docker 只读数据挂载与本地可写日志目录示例实测。
+- [ ] Default assembly, host overrides, disabling and the optional authentication integration
+      combinations pass.
+- [ ] Multiple roots, old routes and the old configuration adapter do not form an authorization
+      bypass.
+- [ ] Audit completion/cancellation semantics, error handling and redaction match the design.
+- [ ] Paging documents the real scan cost; exceeding the cap never returns a partial result that
+      pretends to be complete.
+- [ ] The read-only Docker data mount and the writable local log directory sample were tried.
 
-## 7. 证据记录模板
+## 7. Evidence record template
 
-每个任务在 PR 描述或 `docs/development/reports/<task-id>.md` 记录：
+Record the following in the pull request description or in
+`docs/development/reports/<task-id>.md`:
 
 ```text
-任务 ID / 对应设计章节：
-实现范围及有意兼容性变化：
-运行环境（OS / JDK / Maven）：
-测试命令、实际执行数量与结果：
-性能场景、样本规模、指标及测量方式：
-未执行项、失败原因和剩余风险：
-配置与文档更新位置：
+Task ID / design section:
+Scope and intentional compatibility changes:
+Environment (OS / JDK / Maven):
+Test command, executed count and result:
+Performance scenario, sample size, metrics and measurement:
+Not executed, failure reasons and remaining risks:
+Where configuration and documentation were updated:
 ```
 
-任务状态以代码与验收证据为准。不要在设计完成时勾选实现清单，不自动触发发布或部署。
+Task status follows the code and the acceptance evidence. Do not tick implementation checklists
+when only the design is finished, and never trigger a release or deployment automatically.
 
-## 8. 实施中的决策点
+## 8. Decisions taken during implementation
 
-这些选择在相应任务中通过小型验证后补充决策记录，不阻止先做 P0：安全目录句柄在目标文件系统上的支持、Boot 当前版本流式响应的资源生命周期、宿主 CSRF 适配方式、无 fileKey 时的轮转检测、可选 Security 集成是否拆独立模块。结论应附验证结果；若改变安全或兼容性契约，先更新设计和相关验收用例。
+These choices get a decision record after a small verification inside the relevant task, they do
+not block starting P0: support of secure directory handles on the target file system, the resource
+lifecycle of streaming responses in the current Boot version, the way host CSRF is adapted,
+rotation detection without a fileKey, and whether the optional Security integration becomes its
+own module. Conclusions carry the verification result; if a security or compatibility contract
+changes, update the design and the related acceptance cases first.

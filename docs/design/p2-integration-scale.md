@@ -1,20 +1,31 @@
-# P2：宿主集成、多目录与规模化浏览
+# P2: Host Integration, Multiple Directories and Browsing at Scale
 
-状态：设计待实施。依赖：P0；涉及实时日志的集成验收还依赖 P1。P2 内各任务按开发计划分批交付。
+Status: design to be implemented. Depends on P0; the integration acceptance for live logs also
+depends on P1. The tasks inside P2 ship in batches as described in the development plan.
 
-## 1. 自动配置与路由
+## 1. Auto configuration and routing
 
-新增 `sfe4j.enabled=true`。关闭时不创建控制器、文件服务默认 Bean 和后台执行器；属性绑定及校验不应对已关闭功能产生无关启动错误。
+Add `sfe4j.enabled=true`. When it is off, no controllers, default file service beans or background
+executors are created; property binding and validation must not raise unrelated startup errors for
+a feature that is disabled.
 
-默认 Bean 使用条件注册，宿主可以替换授权策略、根目录提供器、文件访问门面和审计接收器。core 接口不暴露 Spring 类型；starter 负责默认实现及组合，禁止宽泛组件扫描导致“条件 Bean 已跳过但组件仍被扫描注册”。
+Default beans are registered conditionally, so the host can replace the authorization policy, the
+root provider, the file access facade and the audit sink. core interfaces do not expose Spring
+types; the starter owns the default implementations and their composition, and broad component
+scanning that registers a component although its conditional bean was skipped is forbidden.
 
-新增 `sfe4j.web.base-path=/sfe4j`，统一页面/API/静态业务资源链接。新 API 基址为 `${base-path}/api`。旧 `/file-explorer`、`/file-viewer`、`/file-downloader` 默认通过 `web.legacy-routes-enabled=true` 保留为同一实现的别名，随后在主要版本升级中移除。
+Add `sfe4j.web.base-path=/sfe4j` as the shared prefix for pages, APIs and static application
+resources. The new API base is `${base-path}/api`. The old `/file-explorer`, `/file-viewer` and
+`/file-downloader` routes stay as aliases of the same implementation through
+`web.legacy-routes-enabled=true` and are removed in a later major release.
 
-base-path 必须为规范化的应用内绝对路径，不允许协议、查询串、`..` 或保留根路径。单独检查 Servlet context path 与 base-path 组合，避免重复前缀。
+The base path must be a normalized absolute path inside the application, without a protocol, a
+query string, `..` or a reserved root path. Check the Servlet context path and the base path
+combination separately so the prefix is not duplicated.
 
-## 2. 多根目录模型
+## 2. Multiple root directory model
 
-建议配置：
+Proposed configuration:
 
 ```yaml
 sfe4j:
@@ -22,74 +33,137 @@ sfe4j:
     symbolic-link-policy: deny
   roots:
     - id: logs
-      label: 应用日志
+      label: Application logs
       path: /srv/app/logs
       operations: [LIST, PREVIEW, DOWNLOAD, FOLLOW]
     - id: exports
-      label: 导出文件
+      label: Exported files
       path: /srv/app/exports
       operations: [LIST, DOWNLOAD]
 ```
 
-示例仅是建议配置，不代表已实现。roots 非空时进入多根模式，各根始终强制限制访问范围，不能被旧 `restrict-to-base-dir=false` 关闭。根 id 唯一且只允许 `[a-zA-Z0-9_-]{1,64}`，操作名不合法、重复根、不可读路径等启动失败。
+The sample is only a proposal, it is not implemented. A non-empty `roots` list switches to multi
+root mode, where every root always restricts access to its own scope and cannot be relaxed by the
+old `restrict-to-base-dir=false`. Root ids are unique and limited to `[a-zA-Z0-9_-]{1,64}`; an
+invalid operation name, a duplicate root or an unreadable path fails startup.
 
-新 API 接收 `root` 和相对 `path`，默认 path 为空表示根目录；`/roots` 仅返回当前身份可见的 id、label、operations，不返回物理路径。目录条目也只返回逻辑路径和文件名。
+The new API takes `root` and a relative `path`, an empty path means the root directory;
+`/roots` only returns the id, label and operations visible to the current identity and never a
+physical path. Directory entries only return the logical path and the file name.
 
-roots 未配置时，将旧 base-dir 配置映射成 `default` 根，但保留旧限制开关语义；对于允许根外访问的旧模式，只能通过旧路由使用，不能经新相对路径 API 穿出 default 根。页面提示该部署模式的范围设置。
+When `roots` is not configured, the old base directory configuration is mapped to a `default` root
+while the old restriction flag keeps its meaning; the old mode that allows access outside the root
+is only reachable through the old routes and cannot escape the `default` root through the new
+relative path API. The page states the scope of that deployment mode.
 
-多根模式下旧绝对路径必须映射到某个显式允许根；重叠根按请求显式 root 处理，旧请求按最具体根映射，并检查所有适用保护规则，不能选择权限更宽的根绕过。规则复杂时建议禁止重叠根，首版采用启动拒绝重叠根的策略。
+In multi root mode an old absolute path must map to an explicitly allowed root; overlapping roots
+use the root named in the request, an old request maps to the most specific root and every
+applicable protection rule is checked, so a root with wider permissions cannot be picked to bypass
+them. Where rules become complex, overlapping roots should be forbidden, and the first version
+fails startup on overlapping roots.
 
-旧 folder-passwords 保留为全局保护规则。新根级授权与旧密码条件组合为 AND，而不是彼此替代。
+The old `folder-passwords` stay as global protection rules. New root level authorization and the
+old password condition combine with AND, they do not replace each other.
 
-## 3. 身份、授权与哈希密码
+## 3. Identity, authorization and hashed passwords
 
-提供 core `FileAuthorizationProvider`，输入主体、根、相对路径、操作，输出允许/拒绝及内部原因码。默认策略拒绝不被根操作集允许的动作，再组合目录密码和宿主策略；任何策略拒绝即拒绝。
+Provide a core `FileAuthorizationProvider` that takes the subject, the root, the relative path and
+the operation and returns allow or deny with an internal reason code. The default policy denies any
+action the root operation set does not allow, then combines directory passwords and the host
+policy; any policy denying means deny.
 
-Spring Security 适配放在可选集成层，只有对应依赖存在且明确启用时装配，不强制影响未使用 Security 的宿主。适配器从已认证主体提取身份和角色，不自建登录表、不解析任意客户端身份头。配置启用宿主认证却未找到认证适配器时启动失败。
+The Spring Security adapter lives in an optional integration layer and is only assembled when the
+dependency is present and explicitly enabled, it never affects hosts that do not use Security. The
+adapter extracts identity and roles from the authenticated principal, does not build its own login
+table and does not parse arbitrary client identity headers. When host authentication is enabled but
+no authentication adapter is found, startup fails.
 
-宿主拥有登录、session、CSRF 和退出流程；组件提供扩展点，不安装会覆盖宿主所有路由的默认 SecurityFilterChain。最终 API 和测试以仓库实际依赖版本编译结果为准。
+The host owns login, session, CSRF and logout; the component offers extension points and does not
+install a default `SecurityFilterChain` that would cover every host route. The final API and tests
+follow what the repository dependencies actually compile against.
 
-目录密码新增带算法标识的哈希格式及可替换 verifier；旧明文仅作为兼容格式并在文档标记迁移建议。不能通过“哈希失败后退回明文”绕过验证，不把输入密码送到审计事件中。
+Directory passwords gain a hash format with an algorithm marker and a replaceable verifier; the
+old plain text value stays a compatibility format and is documented with a migration note. A failed
+hash check must not fall back to plain text, and the submitted password never reaches an audit
+event.
 
-## 4. 审计事件及持久化边界
+## 4. Audit events and persistence boundaries
 
-新增 `FileAuditEvent`：eventId、requestId、时间、主体标识、rootId、逻辑路径、operation、outcome、reasonCode、durationMs、bytesTransferred。默认不记录正文、密码、session ID、令牌和服务器物理路径；逻辑文件名也可能敏感，接收器应支持脱敏。
+Add `FileAuditEvent` with eventId, requestId, time, subject id, rootId, logical path, operation,
+outcome, reasonCode, durationMs and bytesTransferred. By default no content, password, session id,
+token or server physical path is recorded; a logical file name can be sensitive as well, so sinks
+should support redaction.
 
-目录列表/预览记录操作结果；下载区分授权通过、传输完成、客户端取消和服务端失败，不能在返回 ResponseEntity 时就记为下载成功。日志跟随只记录开始/结束及汇总，不逐行审计。
+Directory listing and preview record the operation outcome; downloads distinguish grant approved,
+transfer completed, client cancelled and server failure, and a returned `ResponseEntity` alone is
+not a successful download. Log following only records start, end and a summary, never every line.
 
-默认接收器采用结构化应用日志，由部署方日志系统持久化；不新增数据库。提供审计接收器接口支持宿主接入数据库或消息系统。异步接收器的队列必须有界，满时计数并告警；默认审计失败不阻断读取，要求强审计的部署可启用 fail-closed，且必须在响应开始前确认接收，语义写入文档。
+The default sink writes structured application logs and the deployment log system persists them;
+no database is added. An audit sink interface lets the host plug in a database or a message system.
+The queue of an asynchronous sink must be bounded, count and warn when full; by default an audit
+failure does not block reading, deployments that need strong auditing can enable fail-closed, which
+must confirm acceptance before the response starts, and the semantics are documented.
 
-目录授权默认仍保存在 session，日志游标为短期状态，不持久化文件正文或密码。多实例需要共享 session、统一令牌密钥和共享限速实现；仅配置 sticky session 不能声称实现跨实例一致性。
+Directory grants still live in the session and log cursors are short lived state; file content and
+passwords are never persisted. Multiple instances need shared sessions, one token key and a shared
+rate limit implementation; configuring sticky sessions alone is not cross instance consistency.
 
-## 5. 目录分页与搜索
+## 5. Directory paging and search
 
-`GET /api/directories?root=logs&path=&page=0&size=100&sort=name&direction=asc&q=error`。
+`GET /api/directories?root=logs&path=&page=0&size=100&sort=name&direction=asc&q=error`.
 
-size 默认 100，最大 500；page 为非负整数，q 最长 128 字符，只对当前目录文件名做普通子串过滤。sort 限定 name、size、modified，目录优先，再按指定字段和相对路径做稳定比较；不得接收任意属性名或表达式。
+Size defaults to 100 and is capped at 500; page is a non-negative integer, `q` is at most 128
+characters and is a plain substring filter on the file names of the current directory. Sort is
+limited to name, size and modified, directories come first, then a stable comparison on the chosen
+field and the relative path; arbitrary property names or expressions are not accepted.
 
-返回 items、page、size、total、scannedAt、truncated。权限位、大小、修改时间保留原始数值供排序，格式化仅在 UI 完成。文件不可访问时按约定返回条目状态或跳过，并返回统计，不能直接终止整个目录扫描。
+The response carries items, page, size, total, scannedAt and truncated. Permission bits, size and
+modification time keep their raw values for sorting, formatting happens in the UI only. When a file
+is not accessible, return the entry state or skip it according to the contract and report the
+count, a single entry must not abort the whole directory scan.
 
-### 成本与一致性
+### Cost and consistency
 
-首版限制最多扫描 50000 个条目，在此范围内一次扫描、过滤、排序后分页；它减少响应体和 DOM，并不使文件系统扫描成本变成 O(pageSize)。超过扫描上限返回明确 `DIRECTORY_LIMIT_EXCEEDED`，提示缩小目录，不能把部分结果当完整目录。
+The first version scans at most 50000 entries and pages after one scan, filter and sort pass; this
+shrinks the response body and the DOM but does not turn file system scanning into O(pageSize).
+Exceeding the scan cap returns an explicit `DIRECTORY_LIMIT_EXCEEDED` asking for a smaller
+directory, a partial result is never presented as a complete directory.
 
-并发最多 4 个目录扫描，无界请求不得堆积。默认不缓存；后续需要缓存时按 root、path、主体和策略版本隔离，并设置容量/TTL，不能跨身份复用授权结果。
+At most 4 directory scans run concurrently, unbounded requests must not pile up. Nothing is cached
+by default; when caching is added later it is isolated by root, path, subject and policy version,
+has a capacity and TTL and never reuses an authorization result across identities.
 
-两次翻页之间目录可以变化，首版为弱一致结果，在响应中带 scannedAt，页面提示刷新。若需要稳定快照，另开任务设计有界快照存储和游标，不在首版伪装成一致分页。
+A directory may change between two pages, so the first version is weakly consistent: the response
+carries scannedAt and the page suggests a refresh. A stable snapshot needs its own task with
+bounded snapshot storage and a cursor, the first version does not pretend to be consistent paging.
 
-不实现递归搜索。未来新增时必须具备最大深度、条目数、时间、取消和逐目标授权。
+Recursive search is not implemented. When it is added it needs a maximum depth, entry cap, time
+budget, cancellation and authorization per target.
 
-## 6. 运维与界面
+## 6. Operations and interface
 
-- 保持只读功能，增加预览/下载/跟随的根级操作开关；禁用功能后端同样拒绝，不能只隐藏按钮。
-- 默认移除硬编码分析脚本；可选统计由宿主注入，内网模式不依赖 CDN。
-- 先实现中英文文案和键盘可达性，再增加暗色主题。主题不影响安全模板约束。
-- 更新 Docker 文档为当前 Java 25，给出非 root 用户、只读数据卷和独立可写日志目录示例。
-- demo 的外部 Boot Admin 地址及 management exposure 只保留在显式演示配置，不作为通用生产默认配置。
-- 提供无敏感路径标签的活跃传输/跟随连接、拒绝计数、队列溢出指标。可选监控依赖缺失时不影响启动。
+- Stay read-only, add per root operation switches for preview, download and follow; a disabled
+  feature is refused by the backend as well, not just hidden in the UI.
+- Remove the hard coded analytics script; optional statistics are injected by the host and the
+  intranet mode does not depend on a CDN.
+- Ship localisation and keyboard accessibility first, then a dark theme. The theme does not affect
+  the secure template constraints.
+- Update the Docker documentation to the current Java 25 and show a non-root user, a read-only data
+  volume and a separate writable log directory.
+- The external Boot Admin address and the management exposure of the demo stay in the explicit demo
+  configuration and are not general production defaults.
+- Expose active transfer/follow connections, denial counts and queue overflow metrics without
+  sensitive path labels. A missing optional monitoring dependency does not break startup.
 
-## 7. 验收
+## 7. Acceptance
 
-条件装配测试覆盖开关关闭、缺少可选依赖、宿主覆盖 Bean、自定义前缀和 context path。授权测试覆盖匿名、已登录无权限、角色允许、根操作拒绝、目录密码未授权和策略异常；异常必须关闭访问。
+Conditional assembly tests cover the switch being off, a missing optional dependency, host
+overridden beans, a custom prefix and a context path. Authorization tests cover anonymous, logged
+in without permission, allowed role, denied by the root operation set, unauthorized directory
+password and policy exceptions; an exception must fail closed.
 
-多根测试覆盖非法 id、重叠根、跨根路径、旧参数兼容和物理路径泄漏。审计测试核对失败和中断事件、敏感数据脱敏、有界队列及 fail-closed 行为。分页对 100/10000/50000 条目录记录延迟和内存，确认请求限额；在目录变化时返回约定的弱一致结果。
+Multi root tests cover invalid ids, overlapping roots, cross root paths, old parameter
+compatibility and physical path leaks. Audit tests check failure and interruption events, sensitive
+data redaction, the bounded queue and fail-closed behaviour. Paging measures latency and memory for
+directories with 100, 10000 and 50000 entries, confirms the request limits and returns the agreed
+weakly consistent result while the directory changes.

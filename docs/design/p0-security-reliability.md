@@ -1,142 +1,242 @@
-# P0：访问安全与基础可靠性
+# P0: Access Security and Baseline Reliability
 
-状态：已实施（P0-01～P0-07 及 111 个单元测试通过）。依赖：无。目标：修复现有能力中的访问边界、输出处理、文件 I/O 和错误行为。
+Status: implemented (P0-01 to P0-07 with 111 unit tests passing). Dependencies: none. Goal: fix
+the access boundaries, output handling, file I/O and error behaviour of the existing features.
 
-实施偏差与未完成项见 [第 10 节](#10-实施记录)。
+Deviations and open items are listed in [section 10](#10-implementation-record).
 
-## 1. 现状与范围
+## 1. Current state and scope
 
-`FileExplorerService.buildFileTree()` 执行基础目录检查，`readFile()` 不检查；目录密码仅在 `FileExplorerController` 判断。预览、下载可绕过列表入口。预览模板使用 `noautoesc`，文件内容进入页面；文件完整加载入内存，读取工具未关闭输入流。
+`FileExplorerService.buildFileTree()` performs the base directory check, `readFile()` does not;
+directory passwords are only evaluated in `FileExplorerController`. Preview and download can
+therefore bypass the listing entry point. The preview template uses `noautoesc`, so file content
+enters the page as markup; files are loaded into memory completely and the read helper does not
+close its input stream.
 
-本阶段不新增用户数据库，不开放写操作，也不实现 HTML 原样渲染。现有目录密码继续作为简易保护方式。
+This stage adds no user database, no write operations and no raw HTML rendering. The existing
+directory passwords stay as a simple protection mechanism.
 
-## 2. 组件设计
+## 2. Component design
 
-下列类型位于 `core` 对应的 `access`、`service`、`exception` 包，名称为建议：
+The types below live in the `access`, `service` and `exception` packages of `core`; the names are
+proposals:
 
-| 类型 | 职责 |
+| Type | Responsibility |
 | --- | --- |
-| `FileOperation` | `LIST`、`PREVIEW`、`DOWNLOAD`，P1 扩展 `FOLLOW` |
-| `FileAccessContext` | 主体标识、已授权保护规则 ID；不携带 HTTP session 或明文密码 |
-| `PathResolver` | 解析请求路径、基础目录、真实路径和符号链接策略 |
-| `FileAccessPolicy` | 针对路径、操作、身份给出允许/拒绝结果 |
-| `FileAccessService` | 统一解析、检查和访问文件的门面；不允许调用方直接绕过策略读取 |
-| `FileAccessException` | 稳定错误码及可映射原因，不把原始异常消息发给用户 |
+| `FileOperation` | `LIST`, `PREVIEW`, `DOWNLOAD`, extended with `FOLLOW` in P1 |
+| `FileAccessContext` | Subject identifier and the granted protection rule ids; carries neither the HTTP session nor a plain text password |
+| `PathResolver` | Resolves the requested path, the base directory, the real path and the symbolic link policy |
+| `FileAccessPolicy` | Returns allow/deny for a path, an operation and an identity |
+| `FileAccessService` | The facade that resolves, checks and accesses files; callers must not read around the policy |
+| `FileAccessException` | Stable error code and a mappable reason, raw exception messages never reach the user |
 
-web 层提供 session 适配器、密码提交处理器及统一异常处理器。现有 `FileExplorerService` 公共方法尽量保留，通过安全门面委托；旧 `readFile(String)` 不具备身份参数，调用时按匿名上下文执行，受保护文件必须拒绝。可增加带上下文的新方法并弃用旧方法，不能为了兼容保留未授权通道。
+The web layer contributes a session adapter, a password submission handler and a shared exception
+handler. The public methods of `FileExplorerService` are kept where possible and delegate to the
+secure facade; the old `readFile(String)` has no identity parameter, so it runs with an anonymous
+context and must refuse protected files. New methods taking a context may be added and the old ones
+deprecated, but an unauthorized path must never be kept for compatibility.
 
-框架无关配置必须具有明确默认值和校验入口；直接构造 core 服务同样不能因 Boolean 为 null 而绕过检查或触发空指针。
+The framework independent configuration needs explicit defaults and a validation entry point;
+constructing the core services directly must not bypass a check or throw a null pointer because a
+Boolean is null.
 
-## 3. 请求处理顺序
+## 3. Request processing order
 
-1. web 层校验参数存在、长度及格式，建立访问上下文。
-2. 解析词法路径，检查保护规则和基础目录的词法边界。
-3. 解析真实路径并检查真实边界、符号链接策略、真实路径对应的保护规则。
-4. 使用统一策略检查本次操作，确认目标类型及可读性。
-5. 返回目录数据、有限文本，或打开下载流；实际打开失败映射为稳定错误。
-6. 在所有退出路径关闭资源；控制器不得从原始参数重新构造文件对象。
+1. The web layer validates that parameters exist, their length and their format, and builds the
+   access context.
+2. Resolve the lexical path and check the protection rules and the lexical base directory
+   boundary.
+3. Resolve the real path and check the real boundary, the symbolic link policy and the protection
+   rules matching the real path.
+4. Check this operation with the shared policy and confirm the target type and readability.
+5. Return the directory data, bounded text, or open the download stream; a failure while opening
+   is mapped to a stable error.
+6. Close resources on every exit path; a controller must never rebuild a file object from the raw
+   parameters.
 
-未授权请求尽量在检查文件存在性前拒绝，减少存在性泄漏。必须解析真实路径才能判断的情况，外部错误也不附带具体宿主路径。
+Unauthorized requests are rejected before existence is checked where possible, to limit existence
+leaks. Where the real path has to be resolved first, the external error still carries no concrete
+host path.
 
-## 4. 路径与符号链接
+## 4. Paths and symbolic links
 
-- 保留旧接口绝对路径；相对路径统一相对于配置基础目录解析，不使用进程工作目录。
-- 使用 `Path` 的路径段比较，不能使用字符串 `startsWith` 判断目录归属；`/data2` 不属于 `/data`。
-- 规范化 `.`、`..`，已有目标使用 `toRealPath()`；配置的基础目录必须存在、是目录且可解析，启用限制时配置错误直接启动失败。
-- 新增 `sfe4j.access.symbolic-link-policy`，初始默认 `deny`；`within-root` 允许最终真实目标仍位于基础目录内的链接。启用限制时，两种策略都不能访问根外真实目标。
-- `deny` 检查从有效根到目标的中间链接及目标链接；不只检查最终文件。基础目录自身也必须符合所选策略。
-- 即使没有开启基础目录限制，目录密码规则也必须规范化并同时检查词法路径和真实目标，防止通过别名路径绕过。
-- 多条保护规则分别在词法路径和真实路径上选最长匹配；若得到不同规则，两者都必须授权，不允许只取其中一个较长字符串。
-- Windows 使用文件系统 Provider 的路径语义；不可统一将反斜杠转换为斜杠后用于 Linux 文件系统访问，反斜杠在 Linux 可以是文件名字符。
-- 配置无效路径、保护目录无法解析时应启动失败；文档要求先创建保护目录。
+- The old interface keeps absolute paths; relative paths are resolved against the configured base
+  directory, never against the process working directory.
+- Compare `Path` segments for directory ownership, a string `startsWith` is not allowed: `/data2`
+  is not inside `/data`.
+- Normalize `.` and `..`, use `toRealPath()` for an existing target; the configured base directory
+  must exist, be a directory and be resolvable, otherwise startup fails.
+- New `sfe4j.access.symbolic-link-policy`, initially defaulting to `deny`; `within-root` allows a
+  link whose final real target is still inside the base directory. With the restriction enabled,
+  neither policy may reach a real target outside the root.
+- `deny` checks the intermediate links from the effective root to the target as well as the target
+  link itself, not just the final file. The base directory itself must satisfy the selected policy.
+- Even without the base directory restriction, directory password rules must be normalized and
+  checked against both the lexical path and the real target, so an alias path cannot bypass them.
+- Several protection rules each take the longest match on the lexical path and on the real path;
+  when they differ, both must be granted. Taking only the longer string of one side is not
+  allowed.
+- On Windows use the path semantics of the file system provider; never convert backslashes to
+  slashes and reuse the result for Linux file system access, because a backslash can be a file
+  name character on Linux.
+- An invalid configured path or an unresolvable protected directory fails startup; the
+  documentation asks for the protected directory to be created first.
 
-### 并发替换风险
+### Concurrent replacement risk
 
-路径检查与打开之间存在 TOCTOU 窗口。优先使用 Provider 支持的 `SecureDirectoryStream` 及相对句柄打开；不可用时执行打开前复查并明确其局限。`NOFOLLOW_LINKS` 只能解决部分链接问题，不能宣称完全防止中间目录替换。部署模型要求非可信用户无法修改目录结构，或使用只读挂载。测试覆盖可复现竞态场景，但不以有限次数竞态测试证明绝对安全。
+A TOCTOU window remains between the path check and opening the file. Prefer
+`SecureDirectoryStream` and relative handle opening where the provider supports it; when it is
+unavailable, re-check right before opening and document the limitation. `NOFOLLOW_LINKS` only
+solves part of the link problem and must not be presented as complete protection against
+replacement of an intermediate directory. The deployment model requires that untrusted users
+cannot modify the directory structure, or read-only mounts. Tests cover a reproducible race, but a
+bounded number of race tests is never proof of absolute safety.
 
-## 5. 目录密码与 session
+## 5. Directory passwords and session
 
-- 保留现有 POST `dir`、`pwd`，验证成功后执行 Post/Redirect/Get；重定向目标由服务端生成，只允许项目内部路径。
-- session 保存规则 ID、规则版本和到期时间，不保存密码；授权默认有效 30 分钟，到期后清除。配置变化使旧规则版本失效。
-- 新增仅退出 SFE4J 目录授权的 POST 操作，不销毁宿主整个 session。
-- 保护范围覆盖目录本身、所有子项及其预览、下载；重叠规则按上述最长匹配规则执行。
-- 密码错误返回统一提示，加入按 session 与可信客户端地址组合的限速，初始每分钟 5 次；不信任任意 `X-Forwarded-For`。分布式部署的共享限速后端留给 P2 扩展。
-- 设置有界限速缓存并定时淘汰，避免通过制造新 session 占满内存。默认单实例行为必须写入说明。
-- 表单使用 CSRF token；优先兼容宿主的 CSRF 机制，独立模式使用 session token。授权前不存在的 session 不能导致校验绕过；验证成功时更换 session ID。
-- 第一阶段兼容原来的配置密码，但不记录或回显；哈希校验扩展列入 P2，不在 core 引入 Spring Security。
+- Keep the existing POST `dir` and `pwd`, and answer with Post/Redirect/Get after a successful
+  check; the redirect target is generated by the server and limited to paths inside the project.
+- The session stores the rule id, the rule version and the expiry time, never the password; a grant
+  is valid for 30 minutes by default and is dropped when it expires. A configuration change
+  invalidates the old rule version.
+- Add a POST operation that drops SFE4J directory grants only, without invalidating the whole host
+  session.
+- Protection covers the directory itself, every child and their preview and download; overlapping
+  rules follow the longest match rule above.
+- A wrong password returns one shared message and is rate limited per session combined with a
+  trusted client address, initially 5 attempts per minute; `X-Forwarded-For` is not trusted. A
+  shared rate limit backend for distributed deployments is left to P2.
+- Use a bounded rate limit cache with periodic eviction so exhausting memory by creating new
+  sessions is not possible. The single instance default must be documented.
+- Forms use a CSRF token; the host CSRF mechanism is preferred when present, a session token is
+  used in standalone mode. A session that does not exist before granting must not let the check be
+  bypassed; change the session id when verification succeeds.
+- The first stage stays compatible with the configured plain text password but never logs or echoes
+  it; hash based verification is a P2 extension and Spring Security is not introduced into `core`.
 
-## 6. 文本预览与下载
+## 6. Text preview and download
 
-### 文本预览
+### Text preview
 
-去掉 `noautoesc`，用自动转义的 `<pre>` 展示。响应包含 `X-Content-Type-Options: nosniff`，文件内容不参与脚本、样式或模板解释。二进制检测、编码选择和行号由 P1 完善；P0 至少拒绝明显二进制内容，明确此检测是启发式判断。
+Drop `noautoesc` and render the content in an auto escaped `<pre>`. The response carries
+`X-Content-Type-Options: nosniff` and file content is never interpreted as script, style or
+template. Binary detection, encoding selection and line numbers are completed in P1; P0 at least
+refuses obviously binary content and states that this detection is heuristic.
 
-新增 `sfe4j.preview.max-bytes=1048576`（1 MiB），最多读取上限加一个字节判断截断，页面明确提示“内容已截断”。避免 UTF-8 多字节字符被切断时显示无说明乱码；按解码器边界处理，解码错误显示提示。默认 UTF-8，其他编码由 P1 提供选择。
+New `sfe4j.preview.max-bytes=1048576` (1 MiB): read at most the limit plus one byte to detect
+truncation and tell the user explicitly that the content was truncated. Avoid showing broken
+multi byte UTF-8 characters without explanation; handle decoder boundaries and report decoding
+errors. UTF-8 is the default, other encodings become selectable in P1.
 
-### 下载
+### Download
 
-使用 Spring 支持的流式响应或 Resource 传输，固定大小缓冲区，不调用 `readFile()` 获得完整 byte 数组。资源由实际写出响应的生命周期负责关闭；不能在返回响应前关闭。
+Use a streaming response or a `Resource` transfer supported by Spring with a fixed size buffer,
+never `readFile()` to obtain a complete byte array. The resource is closed by the lifecycle that
+actually writes the response; it must not be closed before the response is returned.
 
-使用框架的 `ContentDisposition` 构造附件头并正确处理 UTF-8 文件名，禁止 CR/LF 进入响应头。只支持普通文件；命名管道、设备和目录均拒绝。客户端中断后及时关闭文件流；响应提交后失败只能记录传输失败，不能再返回 JSON 错误。
+Build the attachment header with the framework `ContentDisposition` and handle UTF-8 file names
+correctly; CR/LF must never reach a response header. Only regular files are supported; named
+pipes, devices and directories are refused. Close the file stream promptly after a client
+interrupts; a failure after the response was committed can only be logged as a failed transfer, it
+cannot answer with a JSON error any more.
 
-本阶段不实现 Range。超大文件传输受并发上限约束，初始 `sfe4j.download.max-concurrent=8`；线程池及等待队列必须有界，耗尽返回 429，不在默认 Servlet 线程池无界排队。
+Range is not implemented in this stage. Very large transfers are bounded by the concurrency limit,
+initially `sfe4j.download.max-concurrent=8`; the thread pool and the waiting queue must be bounded
+and answer 429 when exhausted instead of queueing without limit in the default Servlet thread pool.
 
-## 7. 错误契约与页面行为
+## 7. Error contract and page behaviour
 
-| 条件 | HTTP | error code |
+| Condition | HTTP | error code |
 | --- | --- | --- |
-| 缺少参数、非法路径/编码 | 400 | `INVALID_REQUEST` |
-| 未取得目录授权 | 403 | `DIRECTORY_AUTH_REQUIRED` |
-| 超出访问范围、策略拒绝、不可读 | 403 | `ACCESS_DENIED` |
-| 授权范围内目标不存在 | 404 | `FILE_NOT_FOUND` |
-| 预览类型不支持 | 415 | `UNSUPPORTED_PREVIEW` |
-| 请求或传输并发超限 | 429 | `RATE_LIMITED` |
-| 未预期 I/O 错误 | 500 | `FILE_IO_ERROR` |
+| Missing parameter, invalid path or encoding | 400 | `INVALID_REQUEST` |
+| Directory grant missing | 403 | `DIRECTORY_AUTH_REQUIRED` |
+| Out of range, denied by policy, not readable | 403 | `ACCESS_DENIED` |
+| Target does not exist although access was granted | 404 | `FILE_NOT_FOUND` |
+| Preview type not supported | 415 | `UNSUPPORTED_PREVIEW` |
+| Request or transfer concurrency exhausted | 429 | `RATE_LIMITED` |
+| Unexpected I/O error | 500 | `FILE_IO_ERROR` |
 
-旧 HTML 路由提供状态正确的错误页；目录列表的密码挑战可以继续显示表单，预览/下载未授权则拒绝并给出返回授权页的安全链接。JSON 接口采用 `{code, message, requestId}`，不将 exception.toString 直接作为 message。不存在的目标只有经过可执行的授权前置检查后才能返回 404。
+The old HTML routes serve an error page with the right status; the password challenge of the
+directory listing keeps showing a form, while an unauthorized preview or download is refused with a
+safe link back to the authorization page. JSON endpoints use `{code, message, requestId}` and never
+expose `exception.toString` as the message. A missing target only answers 404 after the
+authorization preconditions were actually evaluated.
 
-路径参数使用统一 URL 构建和编码，禁止模板直接拼接原始路径。面包屑逐段累计，修复重复目录名错误；所有链接保留宿主 context path。
+Path parameters go through a shared URL builder and encoder, templates must not concatenate raw
+paths. Breadcrumbs accumulate segment by segment, which fixes the repeated directory name bug; all
+links keep the host context path.
 
-## 8. 配置清单
+## 8. Configuration list
 
-| 新配置 | 默认 | 校验 |
+| New property | Default | Validation |
 | --- | --- | --- |
-| `access.symbolic-link-policy` | `deny` | `deny` 或 `within-root` |
-| `access.grant-ttl-seconds` | 1800 | 60–86400 |
-| `access.password-attempts-per-minute` | 5 | 1–60 |
-| `preview.max-bytes` | 1048576 | 1024–16777216 |
-| `download.max-concurrent` | 8 | 1–128 |
+| `access.symbolic-link-policy` | `deny` | `deny` or `within-root` |
+| `access.grant-ttl-seconds` | 1800 | 60-86400 |
+| `access.password-attempts-per-minute` | 5 | 1-60 |
+| `preview.max-bytes` | 1048576 | 1024-16777216 |
+| `download.max-concurrent` | 8 | 1-128 |
 
-表中均省略 `sfe4j.` 前缀。传输超时和有界执行器配置需在下载实现任务中确定，并随代码说明其对慢速客户端的行为。
+The `sfe4j.` prefix is omitted in the table. Transfer timeouts and the bounded executor
+configuration are decided in the download task and documented together with the behaviour towards
+slow clients.
 
-## 9. 验收与回滚
+## 9. Acceptance and rollback
 
-必须覆盖：三个入口的越界、密码绕过、嵌套规则、路径别名、根目录、同名前缀、链接、缺失/不可读目标、中文及 URL 特殊字符、CR/LF 文件名、HTML 脚本、预览截断、下载中断及重复请求后的资源释放。Windows 与 POSIX 分开验证，不用 Linux 上模拟的盘符字符串代替 Windows 测试。
+Coverage must include: out of range access on the three entry points, password bypass, nested
+rules, path aliases, the root directory, directories with a shared prefix, links, missing or
+unreadable targets, non ASCII and URL special characters, CR/LF file names, HTML scripts, preview
+truncation, download interruption and resource release after repeated requests. Windows and POSIX
+are verified separately, a drive letter string simulated on Linux is not a Windows test.
 
-基准：下载至少 1 GiB 文件，单次传输不分配文件大小级别的 byte 数组；比较空闲与传输中的堆使用并记录缓冲和框架开销。重复 100 次中断下载后文件描述符不持续增长。权限测试在实际受限身份下执行，管理员身份下不可读断言需显式跳过并说明。
+Benchmark: download a file of at least 1 GiB, a single transfer must not allocate a byte array of
+the file size; compare heap usage when idle and while transferring and record the buffer and
+framework overhead. File descriptors must not keep growing after 100 interrupted downloads.
+Permission tests run under a real restricted identity, an assertion about unreadable files under an
+administrator identity is skipped explicitly with a note.
 
-回滚通过发布版本完成，不提供关闭统一鉴权或恢复原始 HTML 输出的开关。出现兼容问题先记录失败用例并修复适配层。
+Rollback happens by releasing a version; there is no switch to turn the shared authorization off or
+to bring back raw HTML output. When a compatibility problem appears, record the failing case first
+and fix the adapter layer.
 
-## 10. 实施记录
+## 10. Implementation record
 
-本次实施保留三个旧路由与参数名，按本节顺序落地：
+The three old routes and their parameter names were kept, the work landed in this order:
 
-1. core 新增 `access` 包：`FileOperation`、`FileAccessContext`、`PathResolver`、`FileAccessPolicy`、`FileAccessService`、`DirectoryProtectionRegistry`、`DirectoryProtectionRule`、`ResolvedPath`，以及 `TextFileReader` 与 `FileAccessErrorCode`/`FileAccessException`。
-2. `FileExplorerService` 经 `FileAccessService` 委托；`readFile(String)` 保留签名并按匿名上下文执行，受保护目标必须拒绝。
-3. web 层新增 `access` 与 `web` 包：session 授权存储、密码限速、CSRF、目录授权服务、下载并发限制、统一异常处理器与 URL 编解码。
-4. 预览模板去掉 `noautoesc` 改自动转义 `<pre>`；新增 `file-error.ftlh` 统一错误页；列表链接统一编码，面包屑按段累计。
+1. core gained an `access` package: `FileOperation`, `FileAccessContext`, `PathResolver`,
+   `FileAccessPolicy`, `FileAccessService`, `DirectoryProtectionRegistry`,
+   `DirectoryProtectionRule`, `ResolvedPath`, plus `TextFileReader` and
+   `FileAccessErrorCode`/`FileAccessException`.
+2. `FileExplorerService` delegates through `FileAccessService`; `readFile(String)` keeps its
+   signature and runs with an anonymous context, protected targets must be refused.
+3. The web layer gained `access` and `web` packages: session grant store, password rate limiting,
+   CSRF, directory authorization service, download concurrency limit, shared exception handler and
+   URL codec.
+4. The preview template dropped `noautoesc` in favour of an auto escaped `<pre>`; `file-error.ftlh`
+   was added as the shared error page; listing links are encoded in one place and breadcrumbs
+   accumulate per segment.
 
-### 与设计的偏差
+### Deviations from the design
 
-- **基础目录存在性**：存在性、目录类型和可解析性与 `restrict-to-base-dir` 无关，始终在启动时校验；不满足即启动失败。设计为“启用限制时配置错误直接启动失败”，实施取更严格的无条件校验，因为相对路径解析始终依赖基础目录。
-- **空白基础目录**：`base-dir-path` 为空白时等同未配置，回退到 `/`，不视为配置错误；范围与存在性错误仍然启动失败。
-- **并发下载**：下载并发使用有界信号量，超限返回 429，未引入独立线程池；队列等待仍发生在容器的 Servlet 线程池中，慢客户端行为需在集成测试阶段再评估。
-- **下载响应**：使用 `InputStreamResource` 而非 `Resource` 句柄打开，打开失败映射为 `FILE_IO_ERROR`。
-- **安全目录句柄**：未使用 `SecureDirectoryStream`，路径检查与打开之间的 TOCTOU 窗口仍然存在，部署前提（非可信用户不能修改目录结构或只读挂载）不变。
+- **Base directory existence**: existence, directory type and resolvability are validated at
+  startup regardless of `restrict-to-base-dir`; a violation fails startup. The design said a
+  configuration error fails startup when the restriction is enabled, the implementation is stricter
+  because relative path resolution always depends on the base directory.
+- **Blank base directory**: a blank `base-dir-path` counts as unset and falls back to `/`, it is
+  not treated as a configuration error; range and existence errors still fail startup.
+- **Concurrent downloads**: concurrency uses a bounded semaphore that answers 429 when exhausted,
+  no dedicated thread pool was introduced; queue waiting still happens in the container Servlet
+  thread pool, so slow client behaviour has to be re-evaluated in the integration test stage.
+- **Download response**: uses an `InputStreamResource` instead of opening a `Resource` handle; a
+  failure to open is mapped to `FILE_IO_ERROR`.
+- **Secure directory handles**: `SecureDirectoryStream` is not used, the TOCTOU window between the
+  path check and opening remains, and the deployment prerequisites (untrusted users cannot modify
+  the directory structure, or read-only mounts) are unchanged.
 
-### 未执行项
+### Not executed
 
-- 集成测试：真实 HTTP 下载、客户端中断后的文件描述符与句柄释放、1 GiB 文件堆基准。
-- Windows CI 的路径与符号链接测试；POSIX 上运行的测试都在临时目录内，未覆盖盘符与反斜杠文件名。
-- 权限测试未在实际受限身份下执行。
-- 有界执行器的等待队列与传输超时配置尚未引入。
+- Integration tests: real HTTP download, file descriptor and handle release after a client
+  interrupt, and the 1 GiB file heap benchmark.
+- Windows CI path and symbolic link tests; the tests running on POSIX all live in temporary
+  directories and cover neither drive letters nor backslash file names.
+- Permission tests were not run under a real restricted identity.
+- The waiting queue and transfer timeout configuration of the bounded executor are not in place.

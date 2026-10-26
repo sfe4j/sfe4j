@@ -1,22 +1,31 @@
-# AI 协作规范
+# AI Collaboration Guide
 
-本文件适用于整个仓库，是 AI 编码工具的统一项目规范。开始任务前阅读本文件；需要实现细节时阅读 `docs/ai/project-context.md` 及相关源码。默认使用中文沟通，代码标识符保持英文。
+This file applies to the whole repository and is the single project guide for AI coding tools.
+Read it before starting a task; read `docs/ai/project-context.md` and the relevant source when
+you need implementation details. All documentation and communication in this repository are in
+English, code identifiers stay English as well.
 
-## 项目与模块边界
+## Project and module boundaries
 
-SFE4J 是面向 Spring Boot 应用的文件浏览、预览和下载组件。当前项目版本为 1.1.0，POM 与 CI 使用 Java 25，Spring Boot 依赖版本为 4.1.0；修改前以实际 POM 为准。
+SFE4J is a file explorer, preview and download component for Spring Boot applications. The
+current version is 1.1.0, the POMs and CI use Java 25, and the Spring Boot dependency version is
+4.1.0; always trust the actual POM over this file.
 
-依赖方向：`sample → starter → spring-boot → core`。
+Dependency direction: `sample -> starter -> spring-boot -> core`.
 
-- `sfe4j-core`：文件操作、配置模型、VO；保持独立于 Spring 和 Servlet。
-- `sfe4j-spring-boot`：MVC 控制器、Bean 配置、FreeMarker 模板与静态资源。
-- `sfe4j-spring-boot-starter`：`sfe4j.*` 属性绑定、默认值、自动配置注册。
-- `sfe4j-spring-boot-sample`：可运行示例、环境配置及当前唯一的启动上下文测试。
-- 根 `pom.xml` 只聚合模块，子模块不继承它；不要假设根 properties、插件或依赖管理会传递到子模块。
+- `sfe4j-core`: file operations, configuration model, value objects. It stays independent of
+  Spring and Servlet.
+- `sfe4j-spring-boot`: MVC controllers, bean configuration, FreeMarker templates, static assets.
+- `sfe4j-spring-boot-starter`: `sfe4j.*` property binding, defaults, auto configuration
+  registration.
+- `sfe4j-spring-boot-sample`: runnable example, environment configuration and the only
+  application context test today.
+- The root `pom.xml` only aggregates the modules, the submodules do not inherit from it. Never
+  assume root properties, plugins or dependency management reach the submodules.
 
-## 常用命令
+## Common commands
 
-以下命令从仓库根目录执行，要求 JDK 25 和可用 Maven：
+Run these from the repository root; they need JDK 25 and a working Maven:
 
 ```sh
 mvn test
@@ -26,32 +35,70 @@ mvn -pl sfe4j-spring-boot-sample -am package
 java -jar sfe4j-spring-boot-sample/target/sfe4j-spring-boot-sample.jar --logging.file.name=./target/sfe4j.log
 ```
 
-根目录没有 Maven Wrapper，各子模块有 Wrapper，但脚本当前没有执行权限。没有全局 Maven 时，可从根目录尝试 `(cd sfe4j-core && sh mvnw -f ../pom.xml test)`；Wrapper 固定 Maven 3.8.1，首次使用可能下载发行包，不能默认视为已验证可用。
+There is no Maven Wrapper at the root, each module has one but the script is not executable.
+Without a global Maven, try `(cd sfe4j-core && sh mvnw -f ../pom.xml test)` from the root. The
+wrapper pins Maven 3.8.1, downloads the distribution on first use, and must not be assumed
+verified beforehand.
 
-单独运行 sample 的 `spring-boot:run` 前，需要先 `mvn -pl sfe4j-spring-boot-starter -am install -DskipTests`，再 `mvn -f sfe4j-spring-boot-sample/pom.xml spring-boot:run -Dspring-boot.run.arguments=--logging.file.name=./target/sfe4j.log`。日志路径相对于应用工作目录。示例默认日志路径是 `/data/logs/app.log`，本地运行应覆盖为可写目录。
+Before running `spring-boot:run` for the sample alone, run
+`mvn -pl sfe4j-spring-boot-starter -am install -DskipTests` first, then
+`mvn -f sfe4j-spring-boot-sample/pom.xml spring-boot:run -Dspring-boot.run.arguments=--logging.file.name=./target/sfe4j.log`.
+Log paths are relative to the application working directory. The sample defaults to
+`/data/logs/app.log`, override it with a writable directory when running locally.
 
-## 修改约定
+## Change conventions
 
-- 先阅读相关类、POM、模板和配置，保持改动集中；不要顺手升级依赖或重构整个项目。
-- 沿用当前 Java 风格：四空格缩进、花括号同行、显式 getter/setter。不要为局部变更引入 Lombok、前端打包体系或格式化全仓库。
-- 保持现有公共 API、`sfe4j.*` 配置键、路由、模板模型字段和 context path 行为兼容；有意改变行为时说明影响。
-- 新增配置项时同步检查 `Sfe4jProperties`、`Sfe4jConfiguration`、`Sfe4jAutoConfiguration` 的映射、示例 YAML 和 README 配置表。
-- 改自动配置时检查 `META-INF/spring.factories` 与 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`。不要只修改一处而留下过期类名。
-- 模板与脚本直接位于 `sfe4j-spring-boot/src/main/resources`；不要手改 vendored Bootstrap、jQuery、DataTables 文件来实现业务功能。
-- 文件处理兼顾 Linux/macOS 和 Windows 的路径、空格、中文及特殊字符。
-- 不提交真实密码、令牌、机器专属路径或生成产物；保留许可证。发布、部署不属于常规本地验证。
+- Read the relevant classes, POMs, templates and configuration first and keep changes focused.
+  Do not upgrade dependencies or refactor the whole project in passing.
+- Follow the current Java style: four space indentation, braces on the same line, explicit
+  getters and setters. Do not introduce Lombok, a front end build pipeline or repository wide
+  reformatting for a local change.
+- Keep the existing public API, `sfe4j.*` configuration keys, routes, template model fields and
+  context path behaviour compatible; when a behaviour change is intended, describe its impact.
+- When adding a configuration option, check `Sfe4jProperties`, `Sfe4jConfiguration`,
+  `Sfe4jAutoConfiguration`, the example YAML and the README configuration table together.
+- When touching auto configuration, check both `META-INF/spring.factories` and
+  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. Never
+  update only one of them and leave a stale class name behind.
+- Templates and scripts live directly under `sfe4j-spring-boot/src/main/resources`; do not edit
+  the vendored Bootstrap, jQuery and DataTables files to implement behaviour.
+- Handle file paths for Linux/macOS and Windows, including spaces, non ASCII and other special
+  characters.
+- Never commit real passwords, tokens, machine specific paths or build output; keep the license.
+  Publishing and deployment are not part of the usual local verification.
 
-## 安全与测试
+## Security and testing
 
-- 文件访问变更需一起审查目录列表、预览和下载三个入口；不能只在页面中隐藏链接。
-- 基础目录限制需考虑规范化路径、`..`、相邻前缀目录及符号链接；密码保护需考虑子目录、重叠规则与会话状态。P0 已把这些边界纳入统一门面并配回归测试；残余风险（TOCTOU、集成与 Windows 验证）见 P0 设计第 10 节与项目导览。
-- 区分文件文本和可信 HTML，审查模板转义、URL 编码与下载响应头；不要把原始文件内容当作可信页面输入。
-- 文件 I/O 使用可靠的资源关闭方式，关注大文件内存占用、缺失文件和无权限文件的错误处理。
-- 行为修改增加针对性回归测试；临时目录构造文件样本，不依赖开发机上的真实数据。core/web/starter 已各自声明 JUnit 5 与 Surefire 3.5.4，sample 也在 `<build>` 中钉住同一版本（它继承 Boot parent 会拿到 3.5.6）。单模块单独构建时要用 `-am`，否则 starter 会解析仓库里的旧 `sfe4j-core` jar。
-- 基础目录与保护目录必须存在，数值配置越界即启动失败；因此新增或修改示例配置时，目录必须在目标环境真实存在，否则 sample 启动上下文测试会失败。
-- 文档修改执行差异与路径核对即可。代码修改至少运行相关模块测试；跨模块或依赖变更尽量运行根目录 `mvn verify`。启动上下文通过不能代表文件访问和安全逻辑已被测试。
-- 测试失败时报告实际命令、原因和未验证范围，区分环境/依赖解析失败与代码失败；不得把跳过测试的打包描述为测试通过。
+- Review the listing, preview and download entry points together for any file access change;
+  hiding a link in a page is not a fix.
+- Base directory restrictions must consider normalized paths, `..`, sibling directories with a
+  shared prefix and symbolic links; directory passwords must consider subdirectories,
+  overlapping rules and session state. P0 moved all of these boundaries behind one facade with
+  regression tests; the remaining risks (TOCTOU, integration and Windows verification) are
+  written down in section 10 of the P0 design and in the project guide.
+- Keep file text apart from trusted HTML, review template escaping, URL encoding and download
+  response headers; never treat raw file content as trusted page input.
+- Use reliable resource closing for file I/O, watch the memory footprint of large files and
+  handle missing files and files without read permission.
+- Add targeted regression tests for behaviour changes; build file samples in a temporary
+  directory instead of depending on real data on a development machine. core, web and starter
+  each declare JUnit 5 and Surefire 3.5.4, and the sample pins the same version in its
+  `<build>` block (it inherits 3.5.6 from the Boot parent). Build a single module with `-am`,
+  otherwise the starter resolves an old `sfe4j-core` jar from the repository.
+- The base directory and every protected directory must exist, and an out of range numeric value
+  fails startup. When adding or changing example configuration, the directories must really
+  exist in the target environment, otherwise the sample context test fails.
+- For documentation changes, reviewing the diff and the paths is enough. For code changes, run
+  the tests of the affected module at least; for cross module or dependency changes prefer
+  `mvn verify` at the root. A passing application context does not mean file access and security
+  logic are tested.
+- When a test fails, report the command you ran, the reason and what was not verified, and
+  separate environment or dependency resolution failures from code failures. Never describe a
+  build with skipped tests as tests passing.
 
-## 交付说明
+## Delivery notes
 
-交付时简述改了什么、验证了什么、仍有哪些限制。项目结构、构建命令或关键行为变化时同步维护本文件和项目导览。工具入口文件仅引用本文件，避免复制规则后产生分歧。
+When handing work over, summarise what changed, what was verified and which limitations remain.
+Keep this file and the project guide in sync when the project structure, build commands or key
+behaviour change. Tool specific entry files only reference this file, so rules are never copied
+and drift apart.

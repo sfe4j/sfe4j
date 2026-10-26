@@ -101,10 +101,11 @@
         <repository>
             <id>sfe4j</id>
             <!--
-            1. https://raw.github.com => 固定写法, 若编译的时候一直连接不上(Connection reset)，可将https改成http并反复重试
-            2. sfe4j => github登录的用户名
-            3. mvn-repo => 存储发布的jar仓库
-            4. master => 从哪个分支中拿jar包
+            1. https://raw.github.com => fixed form; when the build keeps failing with
+               "Connection reset", change https to http and retry
+            2. sfe4j => the GitHub account that owns the repository
+            3. mvn-repo => the repository that stores the published jars
+            4. master => the branch the jars are read from
             -->
             <url>https://raw.github.com/sfe4j/mvn-repo/master</url>
         </repository>

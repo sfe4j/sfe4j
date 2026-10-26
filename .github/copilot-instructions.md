@@ -1,5 +1,11 @@
-# SFE4J 仓库说明
+# SFE4J repository notes
 
-开始任务前阅读并遵循仓库根目录 `AGENTS.md`；项目导览位于 `docs/ai/project-context.md`。所有协作规则以 `AGENTS.md` 为统一来源，不在本文件复制维护。
+Read and follow `AGENTS.md` in the repository root before starting a task; the project guide is
+`docs/ai/project-context.md`. All collaboration rules live in `AGENTS.md` as the single source of
+truth and are not duplicated here.
 
-这是 Java 25 的 Maven 四模块项目，依赖方向为 sample → starter → spring-boot → core。根 POM 只做聚合。修改配置要检查属性绑定、核心配置、自动配置映射、示例和 README；文件访问变更要同时检查列表、预览与下载。具体命令及验证要求见 `AGENTS.md`。
+This is a Java 25 Maven project with four modules, dependency direction
+sample -> starter -> spring-boot -> core. The root POM only aggregates. Configuration changes
+must check property binding, the core configuration, the auto configuration mapping, the samples
+and the README; file access changes must check listing, preview and download together. See
+`AGENTS.md` for the commands and the verification expectations.

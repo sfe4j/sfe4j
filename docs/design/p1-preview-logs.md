@@ -1,83 +1,143 @@
-# P1：文本查看与日志排障
+# P1: Text Viewing and Log Troubleshooting
 
-状态：设计待实施。前置：P0 统一文件访问门面及安全回归完成。目标：有限读取大文件，并在资源可控的条件下跟随日志。
+Status: design to be implemented. Prerequisite: the P0 shared file access facade and its security
+regressions are in place. Goal: read large files within limits and follow logs under controlled
+resource usage.
 
-## 1. 用户流程与范围
+## 1. User flow and scope
 
-用户从列表打开文件，默认看到有限文本，可切换编码、换行、行号并搜索已加载内容；日志模式默认读取最后 200 行，可开启跟随、暂停、恢复。页面明确区分“搜索已加载内容”和“搜索整个文件”，本阶段不实现全文件全文检索。
+The user opens a file from the listing and sees bounded text, and can switch encoding, newlines
+and line numbers and search the loaded content; log mode reads the last 200 lines by default and
+can follow, pause and resume. The page distinguishes explicitly between "search the loaded
+content" and "search the whole file"; full text search over an entire file is not part of this
+stage.
 
-支持纯文本配置和日志，不执行 HTML，不做 PDF/Office 转换，不通过扩展名决定授权。JSON/XML/YAML 初期按文本显示；语法高亮为独立增强任务，不阻塞上线。
+Plain text configuration files and logs are supported, HTML is not executed, there is no PDF or
+Office conversion, and authorization never depends on the file extension. JSON, XML and YAML are
+shown as text initially; syntax highlighting is a separate enhancement task and does not block the
+release.
 
-## 2. core 读取设计
+## 2. core read design
 
-新增 `TextReadService`、`TextReadRequest`、`TextReadResult`，所有读取必须通过 P0 已授权目标。返回文本、使用编码、截断状态和下一读取位置；偏移量使用字节，不使用字符数。
+Add `TextReadService`, `TextReadRequest` and `TextReadResult`; every read goes through a target
+that P0 already authorized. The result carries the text, the encoding used, the truncation state
+and the next read position; offsets are byte offsets, never character counts.
 
-- 编码默认 UTF-8，允许 UTF-8、UTF-16LE、UTF-16BE、GB18030；其他编码暂时拒绝。
-- 识别 BOM 并给出实际编码；显式选择与 BOM 冲突时返回清晰错误，不静默覆盖。
-- 默认尾部 200 行，上限 2000 行；扫描字节最多 1 MiB，单行极长也受字节限额约束，页面提示未展示完整行。
-- UTF-8/GB18030 从反向扫描找到的候选边界向后解码，并处理跨块换行、CRLF 和多字节字符。
-- UTF-16 按两字节对齐扫描，按对应编码识别换行；测试代理对、BOM 和块边界。
-- 默认二进制检测对解码后的可打印内容及解码错误比例进行启发式判断，不能仅依赖原始字节中出现 NUL，因为 UTF-16 文本也包含零字节。
-- 文件增长过程中按本次捕获的长度读取；文件缩短时返回重置事件，不使用负偏移。
+- UTF-8 is the default, UTF-8, UTF-16LE, UTF-16BE and GB18030 are allowed; other encodings are
+  refused for now.
+- Detect a BOM and report the effective encoding; when an explicit selection conflicts with the
+  BOM, return a clear error instead of silently overriding it.
+- Default to the last 200 lines with a cap of 2000 lines; scanning is bounded to 1 MiB, and a very
+  long single line is bounded by the byte limit too, with a hint that the line is not shown
+  completely.
+- For UTF-8 and GB18030, decode forward from a candidate boundary found by scanning backwards, and
+  handle newlines across blocks, CRLF and multi byte characters.
+- For UTF-16, scan aligned to two bytes and detect newlines in the matching encoding; test
+  surrogate pairs, the BOM and block boundaries.
+- The default binary detection is a heuristic over the decoded printable content and the ratio of
+  decoding errors; it must not rely only on a NUL in the raw bytes, because UTF-16 text contains
+  zero bytes as well.
+- While a file grows, read up to the length captured in this pass; when a file shrinks, emit a
+  reset event instead of using a negative offset.
 
-首次发布不暴露任意客户端提供的物理文件偏移游标。恢复 token 必须为短时有效的服务端状态或带完整性校验的令牌，绑定根、相对路径、文件代次、编码和主体；它不替代每次授权。
+The first release does not expose a physical file offset cursor supplied by the client. A resume
+token must be short lived server side state or an integrity checked token bound to the root, the
+relative path, the file generation, the encoding and the subject; it never replaces authorization
+on each request.
 
-## 3. HTTP 契约
+## 3. HTTP contract
 
-默认 API 基址 `/sfe4j/api`，P2 增加可配置前缀。P1 的 `file` 参数兼容旧绝对路径，由同一解析器处理。
+The default API base is `/sfe4j/api`, P2 makes the prefix configurable. The P1 `file` parameter
+stays compatible with the old absolute path and is handled by the same resolver.
 
-| 接口 | 参数 | 返回 |
+| Endpoint | Parameters | Returns |
 | --- | --- | --- |
-| `GET /text` | `file`、`mode=head/tail`、`lines`、`charset` | JSON：text、charset、truncated、cursor |
-| `GET /follow` | `file`、`charset`、可选 cursor | SSE，首次读取及后续增量 |
+| `GET /text` | `file`, `mode=head/tail`, `lines`, `charset` | JSON: text, charset, truncated, cursor |
+| `GET /follow` | `file`, `charset`, optional cursor | SSE, first read and later increments |
 
-同源 session 授权，不将密码放进 URL。SSE 建连前完成权限检查；浏览器端明确处理 403/429，不能无限自动重连。错误响应采用 P0 契约。
+Authorization comes from the same origin session, the password is never put into a URL. Permission
+is checked before an SSE connection is established; the browser side handles 403 and 429
+explicitly and must not reconnect forever. Error responses follow the P0 contract.
 
-SSE 事件：
+SSE events:
 
-- `snapshot`：初始有限尾部文本和 cursor。
-- `append`：新增文本、递增事件 ID 和 cursor。
-- `reset`：轮转、截断或文件代次改变，附原因并清空旧游标。
-- `gap`：背压或恢复游标失效，说明数据有缺口，要求重新获取快照。
-- `error`：稳定错误码，之后关闭连接；心跳采用 SSE 注释。
+- `snapshot`: the initial bounded tail text and the cursor.
+- `append`: new text, an increasing event id and the cursor.
+- `reset`: rotation, truncation or a changed file generation, with a reason, discarding the old
+  cursor.
+- `gap`: back pressure or an invalid resume cursor, states that data is missing and asks for a new
+  snapshot.
+- `error`: a stable error code, after which the connection is closed; heartbeats are SSE comments.
 
-JSON 编码后通过 SSE 传输，不将日志行直接拼接为 SSE 协议字段。前端只能以 textContent 等安全方式插入文本。
+Payloads are JSON encoded before being sent over SSE, log lines are never concatenated into SSE
+protocol fields directly. The front end only inserts text through safe APIs such as `textContent`.
 
-## 4. 跟随生命周期
+## 4. Follow lifecycle
 
-web 管理 `LogFollowManager`，core 提供有界增量读取。使用共享有界调度器，默认每秒检查一次，不为每连接创建无限线程。每个订阅维护文件标识、字节位置、解码器残留、权限到期时间及输出队列。
+The web layer owns `LogFollowManager`, core provides bounded incremental reads. Use a shared
+bounded scheduler that checks once per second by default, and never create an unbounded thread per
+connection. Every subscription keeps the file identity, the byte position, decoder leftovers, the
+permission expiry and an output queue.
 
-- 默认全实例最多 20 个连接，每个 session 最多 2 个；过载返回 429。
-- 每连接队列最多 256 KiB，单次增量最多 64 KiB；累计溢出发送 gap 后断开，不能静默丢行后继续声称完整。
-- 默认每 15 秒心跳，连接最长 30 分钟；到期主动断开并允许重新授权后连接。
-- 每轮读取前检查授权是否到期、规则是否变化和目标是否仍符合路径策略；会话失效必须终止。
-- session ID 轮换时迁移或终止旧连接，不能留下不可管理的订阅。
-- 客户端断开、超时、写出失败、应用关闭时注销任务、关闭句柄并释放配额。
-- 同一路径的轮转优先根据 fileKey 判断；Provider 无 fileKey 时结合文件属性并保守发送 reset，不承诺跨所有文件系统无损恢复。
-- copytruncate 场景通过长度变小检测；同长度覆盖或极快截断再增长无法只凭长度可靠识别，记录限制。
+- 20 connections per instance and 2 per session by default; overload answers 429.
+- At most 256 KiB queued per connection and 64 KiB per increment; when the accumulated overflow is
+  reached, send a gap and disconnect instead of silently dropping lines while still claiming the
+  output is complete.
+- Heartbeat every 15 seconds by default, a connection lives at most 30 minutes; it is closed
+  proactively on expiry and may reconnect after a new grant.
+- Before every read round, check whether the grant expired, the rule changed and the target still
+  satisfies the path policy; an invalidated session must end the subscription.
+- Migrate or terminate old connections when the session id rotates, so no unmanageable
+  subscription is left behind.
+- Unregister the task, close handles and release quotas when the client disconnects, times out,
+  the write fails or the application shuts down.
+- Prefer `fileKey` to detect rotation of the same path; when the provider has no `fileKey`, combine
+  file attributes and send a conservative reset, without promising lossless recovery on every file
+  system.
+- A copytruncate scenario is detected by a shrinking length; an overwrite with the same length or a
+  truncate followed by very fast growth cannot be detected reliably from the length alone, which is
+  a documented limitation.
 
-恢复时重新授权。旧 cursor 超出保留窗口或文件已经替换时发送 gap/reset 并读取新快照，不声称 exactly-once。
+Resuming re-authorizes. When an old cursor falls outside the retention window or the file was
+replaced, send gap or reset and read a new snapshot; exactly-once is not claimed.
 
-## 5. 页面行为
+## 5. Page behaviour
 
-- 文本页面提供行号、换行、编码、复制已加载文本、下载按钮和文件信息。
-- “暂停”关闭网络订阅，保留最后 cursor；“恢复”重连，若无法补齐则显示缺口，不能将 UI 暂停变成无限后台缓存。
-- DOM 默认保留 5000 行且总文本不超过 2 MiB；达到任一上限淘汰旧内容并提示。
-- 自动滚动可关闭；用户向上滚动后不强制拉回底部。
-- 搜索采用普通文本，首版不开放任意正则，避免浏览器被复杂表达式阻塞。
-- 错误提示和操作按钮支持键盘访问。新增脚本独立存放，不修改第三方库。
+- The text page offers line numbers, newlines, encoding, copying the loaded text, a download button
+  and file information.
+- "Pause" closes the network subscription and keeps the last cursor; "resume" reconnects and shows a
+  gap when the content cannot be completed, a UI pause must never turn into unlimited background
+  caching.
+- The DOM keeps 5000 lines and at most 2 MiB of text by default; reaching either cap evicts old
+  content and notifies the user.
+- Auto scrolling can be turned off; the user is not forced back to the bottom after scrolling up.
+- Search works on plain text, arbitrary regular expressions are not exposed in the first version so
+  a complex expression cannot block the browser.
+- Error hints and action buttons are keyboard accessible. New scripts live in their own files,
+  third party libraries are not modified.
 
-## 6. 初始配置
+## 6. Initial configuration
 
-均带 `sfe4j.` 前缀：`logs.enabled=false`、`logs.default-lines=200`、`logs.max-lines=2000`、`logs.max-scan-bytes=1048576`、`logs.poll-interval-ms=1000`、`logs.max-connections=20`、`logs.max-connections-per-session=2`、`logs.max-connection-seconds=1800`、`logs.max-queue-bytes=262144`、`logs.max-chunk-bytes=65536`。
+All keys carry the `sfe4j.` prefix: `logs.enabled=false`, `logs.default-lines=200`,
+`logs.max-lines=2000`, `logs.max-scan-bytes=1048576`, `logs.poll-interval-ms=1000`,
+`logs.max-connections=20`, `logs.max-connections-per-session=2`, `logs.max-connection-seconds=1800`,
+`logs.max-queue-bytes=262144`, `logs.max-chunk-bytes=65536`.
 
-数值必须有上限校验；每 session 上限不能大于实例上限，chunk 不能大于 queue。日志跟随关闭时不注册对应接口和后台任务。
+Every number needs an upper bound check; the per session limit may not exceed the instance limit
+and a chunk may not exceed the queue. When log following is disabled, its endpoints and background
+tasks are not registered.
 
-## 7. 验收
+## 7. Acceptance
 
-- 使用大于 1 GiB 的日志验证 tail 耗时取决于扫描上限，而非完整文件大小。
-- 覆盖无末尾换行、CRLF、超长行、多字节跨块、UTF-16、非法编码、空文件和二进制内容。
-- 验证 append、rename 轮转、copytruncate、删除后重建、授权过期、断线恢复和伪造 cursor。
-- 20 个连接运行 30 分钟，记录堆、线程、句柄、队列峰值；慢客户端不会使队列越界，正常本地环境追加到展示目标为 2 秒内。
-- 100 次连接/断开后配额归零且无持续资源增长；应用关闭不会残留读取任务。
-- 携带脚本、SSE 分隔符及恶意文件名的内容均只按文本展示。
+- Verify with a log larger than 1 GiB that the tail duration depends on the scan limit and not on
+  the full file size.
+- Cover a missing trailing newline, CRLF, very long lines, multi byte characters across blocks,
+  UTF-16, invalid encodings, empty files and binary content.
+- Verify append, rename rotation, copytruncate, delete and recreate, grant expiry, reconnect after
+  a disconnect and a forged cursor.
+- Run 20 connections for 30 minutes and record heap, threads, handles and queue peaks; a slow
+  client must not push the queue out of bounds, and an append reaches the screen within 2 seconds
+  in a normal local environment.
+- After 100 connect/disconnect cycles the quota returns to zero with no lasting resource growth;
+  shutting the application down leaves no read task behind.
+- Content carrying scripts, SSE separators and hostile file names is only ever shown as text.

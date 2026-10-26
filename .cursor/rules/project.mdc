@@ -1,8 +1,13 @@
 ---
-description: SFE4J 全仓库 AI 协作入口
+description: SFE4J repository wide AI entry point
 alwaysApply: true
 ---
 
-开始任务前阅读并遵循仓库根目录 `AGENTS.md`，以它作为统一项目规范。
-需要了解模块职责、调用链、配置契约及现有问题时，阅读 `docs/ai/project-context.md`。
-不要在工具专属规则中复制维护完整规范；项目约定变更应更新 `AGENTS.md`。
+Read and follow `AGENTS.md` in the repository root before starting a task, it is the single
+project guide.
+
+Read `docs/ai/project-context.md` when you need module responsibilities, call chains,
+configuration contracts or known issues.
+
+Never copy and maintain the full rules in a tool specific file; update `AGENTS.md` when a project
+convention changes.

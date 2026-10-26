@@ -1,47 +1,75 @@
-# SFE4J 功能演进设计索引
+# SFE4J Feature Evolution Design Index
 
-日期：2026-10-25。状态：P0 已实施（详见 [P0 第 10 节](p0-security-reliability.md#10-实施记录)）；P1、P2 仍为待实施设计，文中类名、接口及配置是建议方案，除明确标注现状外均未实现。
+Date: 2026-10-25. Status: P0 is implemented (see
+[section 10 of the P0 design](p0-security-reliability.md#10-implementation-record)); P1 and P2 are
+still designs to be implemented, so the class names, interfaces and configuration in those files
+are proposals and, unless a file explicitly describes the current state, are not implemented.
 
-目标：将现有文件浏览器完善为安全、轻量、适合嵌入 Spring Boot 或作为 sidecar 的只读文件与日志工具。当前分析基于源码，未进行完整运行或安全验证。
+Goal: turn the existing file explorer into a safe, lightweight, read-only file and log tool that
+fits into a Spring Boot application or runs as a sidecar. The current analysis is based on the
+source, no complete runtime or security verification was done.
 
-## 阅读顺序
+## Reading order
 
-1. [P0：访问安全与基础可靠性](p0-security-reliability.md)
-2. [P1：文本预览与日志排障](p1-preview-logs.md)
-3. [P2：集成能力与规模化浏览](p2-integration-scale.md)
-4. [开发任务、测试与交付计划](../development/implementation-plan.md)
+1. [P0: Access Security and Baseline Reliability](p0-security-reliability.md)
+2. [P1: Text Preview and Log Troubleshooting](p1-preview-logs.md)
+3. [P2: Integration Capability and Browsing at Scale](p2-integration-scale.md)
+4. [Development Task, Test and Delivery Plan](../development/implementation-plan.md)
 
-现状参考 [项目导览](../ai/project-context.md)，开发遵循根目录 [AGENTS.md](../../AGENTS.md)。
+For the current state see the [project guide](../ai/project-context.md), development follows
+[AGENTS.md](../../AGENTS.md) in the repository root.
 
-## 优先级与边界
+## Priority and scope
 
-| 阶段 | 用户收益 | 发布门槛 |
+| Stage | User benefit | Release gate |
 | --- | --- | --- |
-| P0 | 列表、预览、下载遵守相同权限，异常及大文件处理可控 | 已实施：所有入口绕过测试通过，流关闭、转义、错误行为有回归覆盖；集成测试与性能基准未执行 |
-| P1 | 快速阅读配置和大日志，支持跟随日志变化 | 读取、连接、线程、队列均有限额，轮转与断线可恢复 |
-| P2 | 接入宿主认证，分配多个目录，审计访问，大目录分页 | 自动配置可替换，授权失败关闭，分页成本有明确说明 |
+| P0 | Listing, preview and download obey the same permissions; exceptions and large files are handled predictably | Implemented: every entry point bypass test passes, stream closing, escaping and error behaviour have regression coverage; integration tests and performance benchmarks were not executed |
+| P1 | Read configuration and large logs quickly, follow log changes | Reading, connections, threads and queues all have quotas; rotation and disconnects recover |
+| P2 | Plug into host authentication, serve several directories, audit access, page through large directories | Auto configuration is replaceable, authorization fails closed, paging cost is documented |
 
-本轮范围仅为设计和开发文档。实现阶段不默认引入数据库、账号系统、递归全文索引、上传、编辑、删除或命令执行。
+This round only covers design and development documents. The implementation stage does not
+introduce a database, an account system, recursive full text indexing, upload, edit, delete or
+command execution by default.
 
-## 跨阶段约定
+## Cross stage conventions
 
-- `core` 不依赖 Spring、Servlet、HTTP session；web 层将请求身份转换为框架无关访问上下文。
-- 所有入口经过同一个文件访问门面；鉴权完成后才能返回元信息、打开文件或注册跟随任务。
-- 配置变化必须覆盖属性绑定、核心配置、映射、文档、示例和默认值测试。
-- 所有新增数值配置采用正数及明确上下限；不支持或冲突的配置启动失败，不静默降级。
-- 保留既有三个路由与参数；新 JSON API 位于默认 `/sfe4j/api`。P2 路由前缀迁移见对应设计。
-- 新接口返回稳定错误码和 requestId，不泄漏服务器绝对路径、栈、密码或文件正文。
-- 不承诺本地可写文件系统的原子授权；存在恶意本地写入者的环境采用只读挂载或隔离，详见 P0。
-- 后文数值是初始工程默认值与验收目标，需经目标环境基准验证，并非已测性能。
+- `core` does not depend on Spring, Servlet or the HTTP session; the web layer turns the request
+  identity into a framework independent access context.
+- Every entry point goes through the same file access facade; metadata, opening a file and
+  registering a follow task only happen after authorization succeeded.
+- A configuration change must cover property binding, the core configuration, the mapping, the
+  documentation, the samples and the default value tests.
+- Every new numeric option is a positive number with an explicit lower and upper bound;
+  unsupported or conflicting configuration fails startup instead of degrading silently.
+- The three existing routes and their parameters are kept; new JSON APIs live under the default
+  `/sfe4j/api`. Route prefix migration is described in the P2 design.
+- New interfaces return stable error codes and a requestId, and never leak absolute server paths,
+  stack traces, passwords or file content.
+- Atomic authorization on a locally writable file system is not promised; environments with a
+  malicious local writer need read-only mounts or isolation, see P0.
+- The numbers below are initial engineering defaults and acceptance targets, they have to be
+  confirmed by a benchmark in the target environment and are not measured performance.
 
-## 兼容性策略
+## Compatibility strategy
 
-P0 保留 `base-dir-path` 与 `restrict-to-base-dir` 的默认值，避免静默改变现有宿主配置，但明确建议生产显式启用限制。新独立部署示例使用专用只读目录和限制开关，禁止用 `/` 作为生产示例。
+P0 keeps the default values of `base-dir-path` and `restrict-to-base-dir` so existing host
+configuration is not changed silently, while production is explicitly advised to enable the
+restriction. New standalone deployment samples use a dedicated read-only directory together with
+the restriction flag; `/` is not allowed as a production sample.
 
-以下属于有意的安全行为变更：预览默认纯文本、访问越界不再回退到基础目录、缺失参数及无效路径返回明确错误、预览和下载也要求目录授权。发布说明必须列出这些变化。
+The following are intentional security behaviour changes: the preview is plain text by default,
+out of range access no longer falls back to the base directory, missing parameters and invalid
+paths return an explicit error, and preview and download require the directory grant as well.
+Release notes must list these changes.
 
-P1/P2 尽量新增配置和 API；涉及路径表示、默认路由和旧配置的变更通过兼容适配层完成，不在控制器分别实现两套授权。
+P1 and P2 prefer adding configuration and APIs. Changes to path representation, default routes
+and old configuration go through a compatibility adapter, no controller implements two
+authorization paths.
 
-## 交付物与文档维护
+## Deliverables and document maintenance
 
-每个开发任务须提交对应实现、必要测试、配置说明和验收证据。按依赖顺序切分 PR，禁止先暴露新入口再补授权。完成一个阶段后更新本文状态、开发计划任务状态和项目导览，明确已实现版本与剩余问题。
+Every development task ships the implementation, the necessary tests, the configuration
+documentation and the acceptance evidence. Split pull requests along the dependency order and
+never expose a new entry point before its authorization exists. After finishing a stage, update
+the status in this file, the task status in the development plan and the project guide, and state
+the version that carries the change together with the remaining issues.

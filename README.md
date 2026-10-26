@@ -169,6 +169,20 @@ Link: https://sfe4j-demo.amoylabs.com/file-explorer
 ### Screenshot
 ![sfe4j demo screenshot](https://raw.githubusercontent.com/sfe4j/assets-repo/main/sfe4j-demo.png)
 
+## Releasing
+
+Artifacts are published to the GitHub hosted Maven repository
+[sfe4j/mvn-repo](https://github.com/sfe4j/mvn-repo), which is the repository declared in
+[Usage](#usage), and the image goes to [Docker Hub](https://hub.docker.com/r/sfe4j/sfe4j).
+
+1. Set the version in every POM: the root POM, the four module POMs and the inter-module version
+   properties.
+2. Push to `master` and let CI run the tests and the packaging step.
+3. Publish the Maven artifacts with `sh scripts/publish-mvn-repo.sh`. CI runs the same script when
+   a release is published, as long as the `MVN_REPO_TOKEN` secret is configured.
+4. Build and push the image: `gh workflow run ci.yaml --ref master -f build_image=true`.
+5. Tag the commit and create the GitHub release.
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 

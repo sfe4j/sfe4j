@@ -66,7 +66,7 @@
 
 
     <build>
-        <!-- 此tag下面的所有plugins都是关于上传jar包的依赖 -->
+        <!-- Every plugin below exists to publish the jar artifacts. -->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
