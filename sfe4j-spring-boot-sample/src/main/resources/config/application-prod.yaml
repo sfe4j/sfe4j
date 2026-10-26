@@ -1,0 +1,26 @@
+# Production example for the standalone SFE4J deployment used by the container image.
+#
+# Do not publish the file system root. The base directory below is a dedicated directory owned by the
+# deployment; it must exist, be a directory and be resolvable, otherwise the application refuses to
+# start. Mount the directory to be published read-only, for example
+# `docker run -v /srv/files:/data:ro -p8080:8080 sfe4j/sfe4j`.
+sfe4j:
+  base-dir-path: ${BASE_DIR_PATH:/data}
+  restrict-to-base-dir: ${RESTRICT_TO_BASE_DIR:true}
+  title: ${TITLE:Files}
+  description: ${DESCRIPTION:Read-only file service.}
+  quick-links:
+    home: /data
+  # Plain text passwords, kept as the simple protection mechanism of this phase. The protected
+  # directory must exist at startup, so the entry is commented out until it is really used.
+  # folder-passwords:
+  #   "[/data/restricted]": "${RESTRICTED_PASSWORD:change-me}"
+  access:
+    # "within-root" follows symbolic links as long as their target stays inside the base directory.
+    symbolic-link-policy: ${SYMBOLIC_LINK_POLICY:deny}
+    grant-ttl-seconds: ${GRANT_TTL_SECONDS:1800}
+    password-attempts-per-minute: ${PASSWORD_ATTEMPTS_PER_MINUTE:5}
+  preview:
+    max-bytes: ${PREVIEW_MAX_BYTES:1048576}
+  download:
+    max-concurrent: ${DOWNLOAD_MAX_CONCURRENT:8}

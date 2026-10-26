@@ -5,7 +5,7 @@
 
     <groupId>com.amoylabs</groupId>
     <artifactId>sfe4j-spring-boot-starter</artifactId>
-    <version>1.0.3</version>
+    <version>1.1.0</version>
     <name>sfe4j-spring-boot-starter</name>
     <description>Demo project for Spring Boot</description>
 
@@ -14,7 +14,7 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <spring-boot.version>4.1.0</spring-boot.version>
-        <sfe4j-spring-boot.version>1.0.3</sfe4j-spring-boot.version>
+        <sfe4j-spring-boot.version>1.1.0</sfe4j-spring-boot.version>
     </properties>
 
     <dependencies>
@@ -39,6 +39,24 @@
         <dependency>
             <groupId>com.amoylabs</groupId>
             <artifactId>sfe4j-spring-boot</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -73,6 +91,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
             </plugin>
 
             <plugin>

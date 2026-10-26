@@ -16,3 +16,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+sfe4j:
+  # The protected directory must exist at startup; the demo container runs as root, so /root exists.
+  folder-passwords:
+    "[/root]": ${ROOT_PASSWORD:root}

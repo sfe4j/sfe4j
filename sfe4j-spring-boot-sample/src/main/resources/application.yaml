@@ -7,6 +7,9 @@ logging:
     name: /data/logs/app.log
 
 # SFE4J configuration
+# Every value can be overridden by an environment variable. The defaults keep the historical
+# behaviour: the whole file system stays reachable. See config/application-prod.yaml for the
+# recommended production setup.
 sfe4j:
   base-dir-path: ${BASE_DIR_PATH:/}
   restrict-to-base-dir: ${RESTRICT_TO_BASE_DIR:false}
@@ -15,5 +18,14 @@ sfe4j:
   quick-links:
     root: /
     logs: /data/logs
-  folder-passwords:
-    "[/root]": root
+  # Protected directories must exist at startup, otherwise the application refuses to start.
+  # folder-passwords:
+  #   "[/data/secret]": "my_password"
+  access:
+    symbolic-link-policy: ${SYMBOLIC_LINK_POLICY:deny}
+    grant-ttl-seconds: ${GRANT_TTL_SECONDS:1800}
+    password-attempts-per-minute: ${PASSWORD_ATTEMPTS_PER_MINUTE:5}
+  preview:
+    max-bytes: ${PREVIEW_MAX_BYTES:1048576}
+  download:
+    max-concurrent: ${DOWNLOAD_MAX_CONCURRENT:8}
