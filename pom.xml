@@ -14,6 +14,7 @@
         <java.version>25</java.version>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
+        <sfe4j.mvn-repo.dir>${project.build.directory}/mvn-repo</sfe4j.mvn-repo.dir>
     </properties>
 
     <modules>
@@ -30,9 +31,10 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>3.1.4</version>
                 <configuration>
-                    <!-- 配置本地打包后的本地仓库存储地址，后续上传jar包会从此仓库中去取 -->
+                    <!-- Where the artifacts are staged before being pushed to sfe4j/mvn-repo.
+                         Override with -Dsfe4j.mvn-repo.dir=<path>. -->
                     <altDeploymentRepository>
-                        internal.repo::default::file://${project.build.directory}/mvn-repo
+                        internal.repo::default::file://${sfe4j.mvn-repo.dir}
                     </altDeploymentRepository>
                 </configuration>
             </plugin>

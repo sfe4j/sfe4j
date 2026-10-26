@@ -13,6 +13,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  release:
+    types: [ published ]
 
 env:
   IMAGE_NAME: sfe4j/sfe4j
@@ -126,3 +128,29 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ──────────────────────────────────────────────
+  # Stage 4: Publish to the GitHub Maven repository
+  # Skip silently until MVN_REPO_TOKEN is configured.
+  # ──────────────────────────────────────────────
+  publish-maven-repo:
+    name: Publish Maven Artifacts
+    runs-on: ubuntu-latest
+    needs: package
+    if: github.event_name == 'release' && secrets.MVN_REPO_TOKEN != ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Publish to sfe4j/mvn-repo
+        env:
+          MVN_REPO_URL: https://x-access-token:${{ secrets.MVN_REPO_TOKEN }}@github.com/sfe4j/mvn-repo.git
+        run: sh scripts/publish-mvn-repo.sh
