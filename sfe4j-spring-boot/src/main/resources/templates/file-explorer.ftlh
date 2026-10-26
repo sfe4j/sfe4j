@@ -25,12 +25,20 @@
     <div class="page-header">
         <span class="pull-right">
             <ul class="list-inline">
-            <#list meta.quickLinks as title, dir>
+            <#list meta.quickLinks as linkTitle, linkDir>
                 <li>
-                    <a href="?dir=${dir}" data-toggle="tooltip" data-placement="top" title="Jump to ${dir}"
-                       data-original-title="Jump to ${dir}">${title}</a>
+                    <a href="${url.listing(linkDir)}" data-toggle="tooltip" data-placement="top"
+                       title="Jump to ${linkDir}" data-original-title="Jump to ${linkDir}">${linkTitle}</a>
                 </li>
             </#list>
+            <#if showLogout?? && showLogout>
+                <li>
+                    <form method="post" action="${url.logout(currentDir)}" class="form-inline">
+                        <input type="hidden" name="${csrfParameter}" value="${csrfToken}">
+                        <button type="submit" class="btn btn-link" style="padding:0">Exit directory authorization</button>
+                    </form>
+                </li>
+            </#if>
             </ul>
         </span>
         <h3>${meta.title}</h3>
@@ -43,14 +51,16 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">Password Required</div>
                     <div class="panel-body">
+                        <p>Directory: <strong>${targetLabel}</strong></p>
                         <#if pwdError?? && pwdError>
                             <div class="alert alert-danger">Incorrect password, please try again.</div>
                         </#if>
-                        <form method="post" action="?dir=${targetDir}">
+                        <form method="post" action="${url.entry()}">
                             <input type="hidden" name="dir" value="${targetDir}">
+                            <input type="hidden" name="${csrfParameter}" value="${csrfToken}">
                             <div class="form-group">
                                 <label for="pwd">Enter Password:</label>
-                                <input type="password" class="form-control" id="pwd" name="pwd" required>
+                                <input type="password" class="form-control" id="pwd" name="pwd" required autocomplete="current-password">
                             </div>
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </form>
@@ -59,21 +69,16 @@
             </div>
         </div>
     <#else>
-    <#assign currentDirectoryFullName = fileTree.currentDirectory.fullName >
     <ol class="breadcrumb">
-        $
-        <#if currentDirectoryFullName == '/'>
-            /
-        <#else>
-            <#list currentDirectoryFullName?split("/") as x>
-                <#if x!=''>
-                    <#assign currentFullFolder = currentDirectoryFullName?substring(0, currentDirectoryFullName?index_of(x)) + x>
-                    <#if currentDirectoryFullName?index_of(x) != 0>/</#if>
-                    <a href="?dir=${currentFullFolder}"
-                       data-toggle="tooltip" data-placement="top" title="View '${currentFullFolder}' Folder">${x}</a>
-                </#if>
-            </#list>
-        </#if>
+        <#list fileTree.breadcrumbs as crumb>
+            <#if crumb_index gt 0>/</#if>
+            <#if crumb.current>
+                <span>${crumb.name}</span>
+            <#else>
+                <a href="${url.listing(crumb.path)}" data-toggle="tooltip" data-placement="top"
+                   title="View '${crumb.path}' Folder">${crumb.name}</a>
+            </#if>
+        </#list>
     </ol>
 
     <div class="row">
@@ -95,7 +100,7 @@
                         <td>
                             <span class="glyphicon glyphicon-arrow-up"></span>
                             <#if parentDirectory.readable>
-                                <a href="?dir=${parentDirectory.fullName}"
+                                <a href="${url.listing(parentDirectory.fullName)}"
                                    data-toggle="tooltip" data-placement="right" title="View Parent Directory">Parent
                                     Directory</a>
                             <#else>
@@ -115,7 +120,7 @@
                         <td>
                             <span class="glyphicon glyphicon-folder-close"></span>
                             <#if childDirectory.readable>
-                                <a href="?dir=${childDirectory.fullName}"
+                                <a href="${url.listing(childDirectory.fullName)}"
                                    data-toggle="tooltip" data-placement="right"
                                    title="View '${childDirectory.name}' Folder">${childDirectory.name}</a>
                             <#else>
@@ -135,7 +140,7 @@
                         <td>
                             <span class="glyphicon glyphicon-file"></span>
                             <#if file.readable && (file.name?ends_with(".txt") || file.name?ends_with(".log") || file.name?ends_with(".html") || file.name?ends_with(".htm"))>
-                                <a href="${ctx}/file-viewer?file=${file.fullName}"
+                                <a href="${url.preview(file.fullName)}"
                                    data-toggle="tooltip" data-placement="right"
                                    title="View '${file.name}'">${file.name}</a>
                             <#else>
@@ -147,8 +152,7 @@
                         <td>${file.dateTime}</td>
                         <td>
                             <#if file.readable>
-                                <a class="btn btn-xs btn-info" href="${ctx}/file-downloader?file=${file.fullName}"
-                                   target="_blank"
+                                <a class="btn btn-xs btn-info" href="${url.download(file.fullName)}"
                                    title="Download '${file.name}'" data-toggle="tooltip" data-placement="right"
                                    data-original-title="Download '${file.name}'">Download</a>
                             </#if>
@@ -161,7 +165,7 @@
     </#if>
 
     <footer class="footer">
-        <p>♥ Lovely made by <a href="https://github.com/sfe4j" target="_blank">SFE4J</a></p>
+        <p>♥ Lovely made by <a href="https://github.com/sfe4j" target="_blank" rel="noopener noreferrer">SFE4J</a></p>
     </footer>
 
 </div> <!-- /container -->

@@ -1,8 +1,20 @@
 package com.amoylabs.sfe4j.spring.boot.controller;
 
+import com.amoylabs.sfe4j.core.access.FileAccessContext;
+import com.amoylabs.sfe4j.core.exception.FileAccessErrorCode;
+import com.amoylabs.sfe4j.core.exception.FileAccessException;
 import com.amoylabs.sfe4j.core.service.FileExplorerService;
-import com.amoylabs.sfe4j.core.configuration.Sfe4jConfiguration;
-import org.apache.commons.lang3.StringUtils;
+import com.amoylabs.sfe4j.core.vo.FileTreeVO;
+import com.amoylabs.sfe4j.spring.boot.access.CsrfSupport;
+import com.amoylabs.sfe4j.spring.boot.access.DirectoryAuthorizationService;
+import com.amoylabs.sfe4j.spring.boot.web.LinkBuilder;
+import com.amoylabs.sfe4j.spring.boot.web.PathLabels;
+import com.amoylabs.sfe4j.spring.boot.web.UrlCodec;
+
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
@@ -11,72 +23,96 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpSession;
-import java.util.Map;
-
+/**
+ * Directory listing and directory password challenge.
+ *
+ * <p>The listing never decides on its own whether a password is required: the request goes through the
+ * access facade and a {@code DIRECTORY_AUTH_REQUIRED} rejection is turned into the challenge page.</p>
+ */
 @Controller
 public class FileExplorerController {
 
+    private static final String LIST_VIEW = "file-explorer";
+
+    private static final String ENTRY_POINT = "/file-explorer";
+
     private ServletContext servletContext;
+
     private FileExplorerService fileExplorerService;
-    private Sfe4jConfiguration sfe4jConfiguration;
 
-    @GetMapping("/file-explorer")
-    public ModelAndView exec(@RequestParam("dir") @Nullable String dir, HttpSession session) {
-        return handleRequest(dir, null, session);
-    }
+    private DirectoryAuthorizationService authorizationService;
 
-    @PostMapping("/file-explorer")
-    public ModelAndView execPost(@RequestParam("dir") @Nullable String dir, @RequestParam("pwd") @Nullable String pwd, HttpSession session) {
-        return handleRequest(dir, pwd, session);
-    }
+    private CsrfSupport csrfSupport;
 
-    private ModelAndView handleRequest(String dir, String pwd, HttpSession session) {
-        String targetDir = StringUtils.isNotEmpty(dir) ? dir : sfe4jConfiguration.getBaseDirPath();
-        if (targetDir == null) targetDir = "";
-
-        Map<String, String> passwords = sfe4jConfiguration.getFolderPasswords();
-        if (passwords != null) {
-            String protectedPath = null;
-            String requiredPwd = null;
-
-            for (Map.Entry<String, String> entry : passwords.entrySet()) {
-                String pPath = entry.getKey();
-                if (targetDir.equals(pPath) || targetDir.startsWith(pPath + "/") || targetDir.startsWith(pPath + "\\")) {
-                    if (protectedPath == null || pPath.length() > protectedPath.length()) {
-                        protectedPath = pPath;
-                        requiredPwd = entry.getValue();
-                    }
-                }
+    @GetMapping(ENTRY_POINT)
+    public ModelAndView exec(@RequestParam(value = "dir", required = false) @Nullable String dir,
+                             HttpSession session, HttpServletRequest request) {
+        FileAccessContext context = authorizationService.contextFor(session);
+        try {
+            FileTreeVO fileTree = fileExplorerService.buildFileTree(dir, context);
+            ModelAndView modelAndView = new ModelAndView(LIST_VIEW);
+            modelAndView.addObject("ctx", servletContext.getContextPath());
+            modelAndView.addObject("url", new LinkBuilder(servletContext.getContextPath()));
+            modelAndView.addObject("meta", fileExplorerService.buildMetaInfo());
+            modelAndView.addObject("fileTree", fileTree);
+            modelAndView.addObject("csrfParameter", CsrfSupport.PARAMETER_NAME);
+            modelAndView.addObject("csrfToken", csrfSupport.token(request));
+            modelAndView.addObject("showLogout", !authorizationService.requiredRules(dir).isEmpty());
+            modelAndView.addObject("currentDir", dir == null ? "" : dir);
+            return modelAndView;
+        } catch (FileAccessException exception) {
+            if (exception.getCode() != FileAccessErrorCode.DIRECTORY_AUTH_REQUIRED) {
+                throw exception;
             }
-
-            if (protectedPath != null) {
-                String sessionKey = "auth_" + protectedPath;
-                Boolean isAuth = (Boolean) session.getAttribute(sessionKey);
-                if (isAuth == null || !isAuth) {
-                    if (pwd != null && pwd.equals(requiredPwd)) {
-                        session.setAttribute(sessionKey, true);
-                    } else {
-                        ModelAndView mv = new ModelAndView("file-explorer");
-                        mv.addObject("ctx", servletContext.getContextPath());
-                        mv.addObject("meta", fileExplorerService.buildMetaInfo());
-                        mv.addObject("requiresPassword", true);
-                        mv.addObject("targetDir", targetDir);
-                        if (pwd != null) {
-                            mv.addObject("pwdError", true);
-                        }
-                        return mv;
-                    }
-                }
-            }
+            return challenge(dir, request, false);
         }
+    }
 
-        ModelAndView mv = new ModelAndView("file-explorer");
-        mv.addObject("ctx", servletContext.getContextPath());
-        mv.addObject("meta", fileExplorerService.buildMetaInfo());
-        mv.addObject("fileTree", fileExplorerService.buildFileTree(dir));
-        return mv;
+    @PostMapping(ENTRY_POINT)
+    public ModelAndView execPost(@RequestParam(value = "dir", required = false) @Nullable String dir,
+                                 @RequestParam(value = "pwd", required = false) @Nullable String pwd,
+                                 HttpSession session, HttpServletRequest request) {
+        csrfSupport.verify(request);
+
+        boolean granted = authorizationService.authenticate(request, dir, pwd);
+        if (!granted) {
+            return challenge(dir, request, true);
+        }
+        csrfSupport.rotate(request);
+        return new ModelAndView("redirect:" + redirectTarget(dir));
+    }
+
+    @PostMapping(ENTRY_POINT + "/logout")
+    public ModelAndView logout(@RequestParam(value = "dir", required = false) @Nullable String dir,
+                               HttpServletRequest request) {
+        csrfSupport.verify(request);
+        authorizationService.revoke(request);
+        return new ModelAndView("redirect:" + redirectTarget(dir));
+    }
+
+    private ModelAndView challenge(String dir, HttpServletRequest request, boolean passwordError) {
+        ModelAndView modelAndView = new ModelAndView(LIST_VIEW);
+        modelAndView.addObject("ctx", servletContext.getContextPath());
+        modelAndView.addObject("url", new LinkBuilder(servletContext.getContextPath()));
+        modelAndView.addObject("meta", fileExplorerService.buildMetaInfo());
+        modelAndView.addObject("requiresPassword", true);
+        modelAndView.addObject("targetDir", dir == null ? "" : dir);
+        modelAndView.addObject("targetLabel", PathLabels.displayLabel(dir));
+        modelAndView.addObject("pwdError", passwordError);
+        modelAndView.addObject("csrfParameter", CsrfSupport.PARAMETER_NAME);
+        modelAndView.addObject("csrfToken", csrfSupport.token(request));
+        return modelAndView;
+    }
+
+    /**
+     * Builds the redirect target on the server. The path stays inside the application and the parameter
+     * is encoded, so the value can never become an open redirect.
+     */
+    private String redirectTarget(@Nullable String dir) {
+        if (dir == null || dir.isEmpty()) {
+            return ENTRY_POINT;
+        }
+        return ENTRY_POINT + "?dir=" + UrlCodec.encodeQueryValue(dir);
     }
 
     @Autowired
@@ -90,7 +126,12 @@ public class FileExplorerController {
     }
 
     @Autowired
-    public void setSfe4jConfiguration(Sfe4jConfiguration sfe4jConfiguration) {
-        this.sfe4jConfiguration = sfe4jConfiguration;
+    public void setAuthorizationService(DirectoryAuthorizationService authorizationService) {
+        this.authorizationService = authorizationService;
+    }
+
+    @Autowired
+    public void setCsrfSupport(CsrfSupport csrfSupport) {
+        this.csrfSupport = csrfSupport;
     }
 }
