@@ -137,7 +137,9 @@ jobs:
     name: Publish Maven Artifacts
     runs-on: ubuntu-latest
     needs: package
-    if: github.event_name == 'release' && secrets.MVN_REPO_TOKEN != ''
+    if: github.event_name == 'release'
+    env:
+      MVN_REPO_TOKEN: ${{ secrets.MVN_REPO_TOKEN }}
 
     steps:
       - name: Checkout
@@ -151,6 +153,7 @@ jobs:
           cache: 'maven'
 
       - name: Publish to sfe4j/mvn-repo
+        if: env.MVN_REPO_TOKEN != ''
         env:
           MVN_REPO_URL: https://x-access-token:${{ secrets.MVN_REPO_TOKEN }}@github.com/sfe4j/mvn-repo.git
         run: sh scripts/publish-mvn-repo.sh
