@@ -6,46 +6,58 @@
 
 | 关注点 | 源码位置（相对于仓库根目录） | 说明 |
 | --- | --- | --- |
-| 文件系统逻辑 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/service/FileExplorerService.java` | 页面元信息、目录树、读取文件 |
-| 文件读取工具 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/util/FileUtils.java` | 将文件完整读入 byte 数组 |
+| 文件访问门面 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/access/` | 路径解析、保护规则、统一授权与文件操作 |
+| 文件系统逻辑 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/service/FileExplorerService.java` | 页面元信息、目录树；读取委托给访问门面 |
+| 文本读取 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/service/TextFileReader.java` | 有界读取与 UTF-8 解码，标记截断与解码问题 |
+| 文件读取工具 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/util/FileUtils.java` | 读取工具，只在有界的预览读取路径使用 |
 | 数据模型 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/vo/` | 文件、目录树、文件内容 |
 | 配置模型 | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/configuration/Sfe4jConfiguration.java` | 框架无关配置 |
-| Web 入口 | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/controller/` | 列表、预览、下载 |
-| 服务 Bean | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/config/BeanConfig.java` | 注入配置到文件服务 |
-| 页面 | `sfe4j-spring-boot/src/main/resources/templates/` | `file-explorer.ftlh`、`file-viewer.ftlh` |
-| 自动配置 | `sfe4j-spring-boot-starter/src/main/java/com/amoylabs/sfe4j/spring/boot/starter/` | 属性绑定、默认值映射、组件扫描 |
+| 访问与会话适配 | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/access/` | session 授权存储、密码限速、CSRF、目录授权服务 |
+| Web 基础设施 | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/web/` | 错误处理、下载并发限制、URL 编解码、路径标签 |
+| Web 入口 | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/controller/` | 列表、预览、下载，全部经过访问门面 |
+| 服务 Bean | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/config/BeanConfig.java` | 注入配置到文件服务与访问门面 |
+| 页面 | `sfe4j-spring-boot/src/main/resources/templates/` | `file-explorer.ftlh`、`file-viewer.ftlh`、`file-error.ftlh` |
+| 自动配置 | `sfe4j-spring-boot-starter/src/main/java/com/amoylabs/sfe4j/spring/boot/starter/` | 属性绑定、映射与校验、组件扫描 |
 | 运行示例 | `sfe4j-spring-boot-sample/src/main/` | 启动类、Ping 控制器、application YAML 与 profile |
 
-启动时，starter 注册自动配置并启用 `Sfe4jProperties`，将属性映射为 `Sfe4jConfiguration`；`BeanConfig` 创建 `FileExplorerService`，控制器调用服务并输出视图或下载响应。
+启动时，starter 注册自动配置并启用 `Sfe4jProperties`，由 `Sfe4jProperties.toConfiguration()` 映射并校验为 `Sfe4jConfiguration`；`BeanConfig` 创建 `FileAccessService` 与 `FileExplorerService`，控制器经访问门面输出视图或流式下载响应。
 
 ## HTTP 与配置契约
 
 - `GET /file-explorer?dir=...`：目录列表；未传目录时使用基础目录。
-- `POST /file-explorer`：以 `dir`、`pwd` 参数验证目录密码；授权状态保存在 HTTP session。
-- `GET /file-viewer?file=...`：读取文件并将字符串传给预览模板。
-- `GET /file-downloader?file=...`：读取文件，返回字节数组及附件响应头。
-- 属性前缀 `sfe4j`，支持 `title`、`description`、`quick-links`、`base-dir-path`、`restrict-to-base-dir`、`folder-passwords`。
-- 自动配置将空基础目录默认为 `/`、空限制开关默认为 `false`；标题和描述由服务回退到 `GlobalConstants`。
+- `POST /file-explorer`：以 `dir`、`pwd` 参数验证目录密码，成功后 Post/Redirect/Get；授权只保存在 HTTP session，默认 30 分钟。
+- `POST /file-explorer/logout`：仅清除 SFE4J 目录授权，不销毁宿主 session。
+- `GET /file-viewer?file=...`：有界读取文本并交给自动转义的预览模板。
+- `GET /file-downloader?file=...`：以固定缓冲区流式输出附件，并发超限返回 429。
+- 属性前缀 `sfe4j`，支持 `title`、`description`、`quick-links`、`base-dir-path`、`restrict-to-base-dir`、`folder-passwords`、`access.*`、`preview.*`、`download.*`。
+- 自动配置将空基础目录默认为 `/`、空限制开关默认为 `false`；标题和描述由服务回退到 `GlobalConstants`。数值配置超范围时启动失败，不静默降级。
 - YAML 中路径类型 Map 键采用括号写法，例如 `"[/data/secret]"`。示例文件中的密码仅适合演示，不应当作部署凭据。
 
 ## 构建与运行事实
 
-- 四模块版本分别声明，目前均为 `1.0.3`；模块间版本属性也分散在各自 POM 中，发布版本修改需逐处核对。
+- 四模块版本分别声明，目前均为 `1.1.0`；模块间版本属性也分散在各自 POM 中，发布版本修改需逐处核对。
 - `core` 依赖 Commons Lang；web 引入 Spring MVC、FreeMarker；starter 负责集成；sample 继承 Spring Boot parent 并引入 Boot Admin client。
 - `.github/workflows/ci.yaml` 使用 JDK 25，分别执行 `mvn test` 和跳过测试的打包；手动输入 `build_image` 控制镜像构建与推送。
 - Dockerfile 位于 `.cicd/Dockerfile`，复制 sample 的可执行 JAR，使用 Temurin 25 JRE；Jenkinsfile 依赖仓库外共享库。
 - sample 的产物为 `sfe4j-spring-boot-sample/target/sfe4j-spring-boot-sample.jar`，默认端口 8080。
-- 当前只有 sample 的 `@SpringBootTest contextLoads()`，没有文件行为或访问控制回归测试，也没有独立前端构建步骤。
+- core、web、starter 三个模块各自配置 JUnit 5 与 Surefire，均有真实执行的测试：core 覆盖路径/策略/文本读取，web 覆盖控制器、session、CSRF 与模板渲染，starter 覆盖属性绑定与启动校验。sample 仍只有 `@SpringBootTest contextLoads()`。
+- 集成测试（真实 HTTP 下载、中断与句柄释放）与 Windows CI 尚未纳入，见开发计划的未执行项。
 
 ## 已观察到的待改进点
 
-以下用于后续任务评估，不表示本次文档初始化已修复：
+以下用于后续任务评估。前五项为 P0 已修复项，保留作为回归依据：
 
-1. **文件访问边界**：`restrict-to-base-dir` 仅在 `buildFileTree()` 使用；`readFile()` 没有同等检查，预览和下载直接调用它。目录列表的父链比较使用 `File.equals`，未进行真实路径解析，需验证 `..` 和符号链接行为。
-2. **目录密码范围**：密码匹配和 session 检查只在目录列表控制器中；预览和下载没有相应验证。匹配基于原始路径字符串，需关注路径规范化及多平台分隔符。
-3. **预览输出**：`file-viewer.ftlh` 用 `<#noautoesc>` 输出文件内容，能够渲染 HTML；处理不可信文件时需评估脚本执行风险，并明确文本预览与 HTML 预览的产品要求。
-4. **资源与内存**：`FileUtils.readToByteArray()` 未关闭输入流；预览和下载均完整加载文件，大文件可能导致较高内存占用。
-5. **异常与编码**：`readFile()` 遇到 `IOException` 返回 `null`，控制器继续解引用；参数为空也缺少统一处理。预览使用平台默认字符集，下载文件名直接拼入响应头，列表链接中的路径也需核对 URL 编码。
+1. ~~**文件访问边界**：`restrict-to-base-dir` 仅在 `buildFileTree()` 使用。~~ 已由统一访问门面修复：列表、预览、下载共用 `FileAccessService`，路径归属按路径段比较并解析真实路径。
+2. ~~**目录密码范围**：密码检查只在目录列表控制器。~~ 已修复：保护规则在词法路径与真实路径上分别取最长匹配，预览和下载同样要求授权。
+3. ~~**预览输出**：`<#noautoesc>` 能够渲染 HTML。~~ 已修复：改为自动转义的 `<pre>`，文件名也经过转义。
+4. ~~**资源与内存**：输入流未关闭，文件完整加载。~~ 已修复：预览最多读取 `preview.max-bytes`，下载改用固定缓冲区流式输出并随响应关闭。
+5. ~~**异常与编码**：`readFile()` 遇错返回 `null`，文件名直接拼入响应头。~~ 已修复：统一错误码与错误页/JSON 契约，下载头由 `ContentDisposition` 构造，列表链接统一 URL 编码。
+
+剩余项（P1/P2 范围）：
+
+6. **跟随与日志能力**：大日志的 head/tail、编码选择、行号与 SSE 跟随尚未实现。
+7. **规模化与集成**：多根、宿主认证 SPI、审计、服务端分页、中英文与移除统计脚本尚未实现。
+8. **并发替换风险**：路径检查与打开之间仍存在 TOCTOU 窗口，未使用 `SecureDirectoryStream`；部署上需要只读挂载或隔离。
 
 ## 后续任务建议验证的场景
 
