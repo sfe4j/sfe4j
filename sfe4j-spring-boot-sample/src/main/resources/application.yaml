@@ -29,3 +29,14 @@ sfe4j:
     max-bytes: ${PREVIEW_MAX_BYTES:1048576}
   download:
     max-concurrent: ${DOWNLOAD_MAX_CONCURRENT:8}
+  logs:
+    enabled: ${LOGS_ENABLED:true}
+    default-lines: ${LOGS_DEFAULT_LINES:200}
+    max-lines: ${LOGS_MAX_LINES:2000}
+    max-scan-bytes: ${LOGS_MAX_SCAN_BYTES:1048576}
+    poll-interval-ms: ${LOGS_POLL_INTERVAL_MS:1000}
+    max-connections: ${LOGS_MAX_CONNECTIONS:20}
+    max-connections-per-session: ${LOGS_MAX_CONNECTIONS_PER_SESSION:2}
+    max-connection-seconds: ${LOGS_MAX_CONNECTION_SECONDS:1800}
+    max-queue-bytes: ${LOGS_MAX_QUEUE_BYTES:262144}
+    max-chunk-bytes: ${LOGS_MAX_CHUNK_BYTES:65536}

@@ -21,3 +21,9 @@ sfe4j:
   # The protected directory must exist at startup; the demo container runs as root, so /root exists.
   folder-passwords:
     "[/root]": ${ROOT_PASSWORD:root}
+
+  # Text reading and log following are enabled for the demo.
+  logs:
+    enabled: ${LOGS_ENABLED:true}
+    max-connections: ${LOGS_MAX_CONNECTIONS:20}
+    max-connections-per-session: ${LOGS_MAX_CONNECTIONS_PER_SESSION:2}

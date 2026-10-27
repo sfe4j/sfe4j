@@ -62,6 +62,16 @@ class Sfe4jAutoConfigurationTest {
         assertThat(configuration.getPasswordAttemptsPerMinute()).isEqualTo(5);
         assertThat(configuration.getPreviewMaxBytes()).isEqualTo(1048576L);
         assertThat(configuration.getDownloadMaxConcurrent()).isEqualTo(8);
+        assertThat(configuration.getLogsEnabled()).isFalse();
+        assertThat(configuration.getLogsDefaultLines()).isEqualTo(200);
+        assertThat(configuration.getLogsMaxLines()).isEqualTo(2000);
+        assertThat(configuration.getLogsMaxScanBytes()).isEqualTo(1048576L);
+        assertThat(configuration.getLogsPollIntervalMs()).isEqualTo(1000L);
+        assertThat(configuration.getLogsMaxConnections()).isEqualTo(20);
+        assertThat(configuration.getLogsMaxConnectionsPerSession()).isEqualTo(2);
+        assertThat(configuration.getLogsMaxConnectionSeconds()).isEqualTo(1800L);
+        assertThat(configuration.getLogsMaxQueueBytes()).isEqualTo(262144);
+        assertThat(configuration.getLogsMaxChunkBytes()).isEqualTo(65536);
     }
 
     @Test
@@ -75,7 +85,17 @@ class Sfe4jAutoConfigurationTest {
                 "sfe4j.access.grant-ttl-seconds=900",
                 "sfe4j.access.password-attempts-per-minute=3",
                 "sfe4j.preview.max-bytes=65536",
-                "sfe4j.download.max-concurrent=4");
+                "sfe4j.download.max-concurrent=4",
+                "sfe4j.logs.enabled=true",
+                "sfe4j.logs.default-lines=100",
+                "sfe4j.logs.max-lines=500",
+                "sfe4j.logs.max-scan-bytes=65536",
+                "sfe4j.logs.poll-interval-ms=2000",
+                "sfe4j.logs.max-connections=5",
+                "sfe4j.logs.max-connections-per-session=1",
+                "sfe4j.logs.max-connection-seconds=600",
+                "sfe4j.logs.max-queue-bytes=131072",
+                "sfe4j.logs.max-chunk-bytes=32768");
 
         assertThat(configuration.getBaseDirPath()).isEqualTo("/data");
         assertThat(configuration.getRestrictToBaseDir()).isTrue();
@@ -86,6 +106,16 @@ class Sfe4jAutoConfigurationTest {
         assertThat(configuration.getPasswordAttemptsPerMinute()).isEqualTo(3);
         assertThat(configuration.getPreviewMaxBytes()).isEqualTo(65536L);
         assertThat(configuration.getDownloadMaxConcurrent()).isEqualTo(4);
+        assertThat(configuration.getLogsEnabled()).isTrue();
+        assertThat(configuration.getLogsDefaultLines()).isEqualTo(100);
+        assertThat(configuration.getLogsMaxLines()).isEqualTo(500);
+        assertThat(configuration.getLogsMaxScanBytes()).isEqualTo(65536L);
+        assertThat(configuration.getLogsPollIntervalMs()).isEqualTo(2000L);
+        assertThat(configuration.getLogsMaxConnections()).isEqualTo(5);
+        assertThat(configuration.getLogsMaxConnectionsPerSession()).isEqualTo(1);
+        assertThat(configuration.getLogsMaxConnectionSeconds()).isEqualTo(600L);
+        assertThat(configuration.getLogsMaxQueueBytes()).isEqualTo(131072);
+        assertThat(configuration.getLogsMaxChunkBytes()).isEqualTo(32768);
     }
 
     @Test
@@ -111,6 +141,33 @@ class Sfe4jAutoConfigurationTest {
         assertThatThrownBy(() -> bind("sfe4j.download.max-concurrent=1000"))
                 .isInstanceOf(Sfe4jRuntimeException.class)
                 .hasMessageContaining("sfe4j.download.max-concurrent");
+        assertThatThrownBy(() -> bind("sfe4j.logs.default-lines=0"))
+                .isInstanceOf(Sfe4jRuntimeException.class)
+                .hasMessageContaining("sfe4j.logs.default-lines");
+        assertThatThrownBy(() -> bind("sfe4j.logs.max-connections-per-session=64"))
+                .isInstanceOf(Sfe4jRuntimeException.class)
+                .hasMessageContaining("sfe4j.logs.max-connections-per-session");
+    }
+
+    @Test
+    void logEndpointsAreOnlyRegisteredWhenTheFeatureIsEnabled(@TempDir Path baseDir) {
+        starterRunner
+                .withPropertyValues("sfe4j.base-dir-path=" + baseDir, "sfe4j.logs.enabled=false")
+                .run(context -> {
+                    assertThat(context).doesNotHaveBean(
+                            com.amoylabs.sfe4j.spring.boot.controller.TextApiController.class);
+                    assertThat(context).doesNotHaveBean(
+                            com.amoylabs.sfe4j.spring.boot.logs.LogFollowManager.class);
+                });
+
+        starterRunner
+                .withPropertyValues("sfe4j.base-dir-path=" + baseDir, "sfe4j.logs.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(
+                            com.amoylabs.sfe4j.spring.boot.controller.TextApiController.class);
+                    assertThat(context).hasSingleBean(
+                            com.amoylabs.sfe4j.spring.boot.logs.LogFollowManager.class);
+                });
     }
 
     @Test

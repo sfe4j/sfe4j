@@ -56,6 +56,11 @@ public class Sfe4jProperties {
      */
     private Download download = new Download();
 
+    /**
+     * Text read and log following settings.
+     */
+    private Logs logs = new Logs();
+
     public String getTitle() {
         return title;
     }
@@ -124,6 +129,16 @@ public class Sfe4jProperties {
         configuration.setPasswordAttemptsPerMinute(access.getPasswordAttemptsPerMinute());
         configuration.setPreviewMaxBytes(preview.getMaxBytes());
         configuration.setDownloadMaxConcurrent(download.getMaxConcurrent());
+        configuration.setLogsEnabled(logs.getEnabled());
+        configuration.setLogsDefaultLines(logs.getDefaultLines());
+        configuration.setLogsMaxLines(logs.getMaxLines());
+        configuration.setLogsMaxScanBytes(logs.getMaxScanBytes());
+        configuration.setLogsPollIntervalMs(logs.getPollIntervalMs());
+        configuration.setLogsMaxConnections(logs.getMaxConnections());
+        configuration.setLogsMaxConnectionsPerSession(logs.getMaxConnectionsPerSession());
+        configuration.setLogsMaxConnectionSeconds(logs.getMaxConnectionSeconds());
+        configuration.setLogsMaxQueueBytes(logs.getMaxQueueBytes());
+        configuration.setLogsMaxChunkBytes(logs.getMaxChunkBytes());
 
         configuration.validate();
         return configuration;
@@ -151,6 +166,14 @@ public class Sfe4jProperties {
 
     public void setDownload(Download download) {
         this.download = download == null ? new Download() : download;
+    }
+
+    public Logs getLogs() {
+        return logs;
+    }
+
+    public void setLogs(Logs logs) {
+        this.logs = logs == null ? new Logs() : logs;
     }
 
     public static class Access {
@@ -225,6 +248,145 @@ public class Sfe4jProperties {
 
         public void setMaxConcurrent(Integer maxConcurrent) {
             this.maxConcurrent = maxConcurrent;
+        }
+    }
+
+    public static class Logs {
+
+        /**
+         * Whether the text read API and log following are enabled. Default: false.
+         */
+        private Boolean enabled;
+
+        /**
+         * Number of lines read when a request does not ask for a specific amount, between 1 and
+         * max-lines. Default: 200.
+         */
+        private Integer defaultLines;
+
+        /**
+         * Upper bound of the lines one read may return, between 1 and 100000. Default: 2000.
+         */
+        private Integer maxLines;
+
+        /**
+         * Upper bound of the bytes scanned backwards for a tail read, between 4096 and 16777216.
+         * Default: 1048576.
+         */
+        private Long maxScanBytes;
+
+        /**
+         * Interval between two read rounds of a follow connection in milliseconds, between 100 and
+         * 60000. Default: 1000.
+         */
+        private Long pollIntervalMs;
+
+        /**
+         * Maximum number of follow connections per instance, between 1 and 1000. Default: 20.
+         */
+        private Integer maxConnections;
+
+        /**
+         * Maximum number of follow connections per session, between 1 and 64 and not greater than
+         * max-connections. Default: 2.
+         */
+        private Integer maxConnectionsPerSession;
+
+        /**
+         * Lifetime of one follow connection in seconds, between 30 and 86400. Default: 1800.
+         */
+        private Long maxConnectionSeconds;
+
+        /**
+         * Upper bound of the bytes queued for one follow connection, between 4096 and 10485760.
+         * Default: 262144.
+         */
+        private Integer maxQueueBytes;
+
+        /**
+         * Upper bound of the bytes read in one round of a follow connection, between 1024 and 1048576
+         * and not greater than max-queue-bytes. Default: 65536.
+         */
+        private Integer maxChunkBytes;
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Integer getDefaultLines() {
+            return defaultLines;
+        }
+
+        public void setDefaultLines(Integer defaultLines) {
+            this.defaultLines = defaultLines;
+        }
+
+        public Integer getMaxLines() {
+            return maxLines;
+        }
+
+        public void setMaxLines(Integer maxLines) {
+            this.maxLines = maxLines;
+        }
+
+        public Long getMaxScanBytes() {
+            return maxScanBytes;
+        }
+
+        public void setMaxScanBytes(Long maxScanBytes) {
+            this.maxScanBytes = maxScanBytes;
+        }
+
+        public Long getPollIntervalMs() {
+            return pollIntervalMs;
+        }
+
+        public void setPollIntervalMs(Long pollIntervalMs) {
+            this.pollIntervalMs = pollIntervalMs;
+        }
+
+        public Integer getMaxConnections() {
+            return maxConnections;
+        }
+
+        public void setMaxConnections(Integer maxConnections) {
+            this.maxConnections = maxConnections;
+        }
+
+        public Integer getMaxConnectionsPerSession() {
+            return maxConnectionsPerSession;
+        }
+
+        public void setMaxConnectionsPerSession(Integer maxConnectionsPerSession) {
+            this.maxConnectionsPerSession = maxConnectionsPerSession;
+        }
+
+        public Long getMaxConnectionSeconds() {
+            return maxConnectionSeconds;
+        }
+
+        public void setMaxConnectionSeconds(Long maxConnectionSeconds) {
+            this.maxConnectionSeconds = maxConnectionSeconds;
+        }
+
+        public Integer getMaxQueueBytes() {
+            return maxQueueBytes;
+        }
+
+        public void setMaxQueueBytes(Integer maxQueueBytes) {
+            this.maxQueueBytes = maxQueueBytes;
+        }
+
+        public Integer getMaxChunkBytes() {
+            return maxChunkBytes;
+        }
+
+        public void setMaxChunkBytes(Integer maxChunkBytes) {
+            this.maxChunkBytes = maxChunkBytes;
         }
     }
 }
