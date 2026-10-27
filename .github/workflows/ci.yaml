@@ -116,7 +116,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=1.1.${{ github.run_number }}
+            type=raw,value=1.2.${{ github.run_number }}
             type=raw,value=latest
 
       - name: Build and push
