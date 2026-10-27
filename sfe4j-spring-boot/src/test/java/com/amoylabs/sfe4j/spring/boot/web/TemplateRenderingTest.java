@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -74,7 +75,38 @@ class TemplateRenderingTest {
 
         assertFalse(html.contains("<script>alert"), "file content must not be interpreted as markup");
         assertTrue(html.contains("&lt;script&gt;"));
-        assertTrue(html.contains("<pre class=\"sfe4j-preview\">"));
+        assertTrue(html.contains("class=\"sfe4j-content\""));
+        assertFalse(html.contains("id=\"sfe4j-follow\""), "follow needs sfe4j.logs.enabled=true");
+    }
+
+    @Test
+    void followControlsAreRenderedWhenLogFollowingIsEnabled() throws Exception {
+        TextPreviewVO preview = new TextPreviewVO();
+        preview.setFileName("app.log");
+        preview.setContent("line\n");
+        preview.setEncoding("UTF-8");
+        preview.setParentPath("/data/logs");
+        preview.setSize(5);
+        preview.setMaxBytes(1048576);
+        preview.setMode("tail");
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("ctx", "");
+        model.put("url", new LinkBuilder(""));
+        model.put("meta", meta());
+        model.put("preview", preview);
+        model.put("logsEnabled", true);
+        model.put("charsets", List.of("UTF-8", "UTF-16LE"));
+        model.put("defaultLines", 200);
+        model.put("maxLines", 2000);
+
+        String html = render("file-viewer.ftlh", model);
+
+        assertTrue(html.contains("id=\"sfe4j-follow\""));
+        assertTrue(html.contains("data-logs-enabled=\"true\""));
+        assertTrue(html.contains("data-api=\"/sfe4j/api\""));
+        assertTrue(html.contains(">UTF-16LE<"), "every supported encoding is offered");
+        assertTrue(html.contains("js/sfe4j-text-viewer.js"));
     }
 
     @Test

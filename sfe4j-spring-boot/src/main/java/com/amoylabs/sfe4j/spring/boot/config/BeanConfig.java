@@ -7,8 +7,10 @@ import com.amoylabs.sfe4j.spring.boot.access.CsrfSupport;
 import com.amoylabs.sfe4j.spring.boot.access.DirectoryAuthorizationService;
 import com.amoylabs.sfe4j.spring.boot.access.PasswordAttemptLimiter;
 import com.amoylabs.sfe4j.spring.boot.access.SessionGrantStore;
+import com.amoylabs.sfe4j.spring.boot.logs.LogFollowManager;
 import com.amoylabs.sfe4j.spring.boot.web.DownloadConcurrencyLimiter;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -61,5 +63,17 @@ public class BeanConfig {
     @Bean
     public DownloadConcurrencyLimiter initDownloadConcurrencyLimiter(Sfe4jConfiguration sfe4jConfiguration) {
         return new DownloadConcurrencyLimiter(sfe4jConfiguration.getDownloadMaxConcurrent());
+    }
+
+    /**
+     * Only registered when log following is enabled: without it neither the API controller nor a
+     * background read task exists.
+     */
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(prefix = "sfe4j.logs", name = "enabled", havingValue = "true")
+    public LogFollowManager initLogFollowManager(Sfe4jConfiguration sfe4jConfiguration,
+                                                 FileAccessService fileAccessService,
+                                                 DirectoryAuthorizationService directoryAuthorizationService) {
+        return new LogFollowManager(sfe4jConfiguration, fileAccessService, directoryAuthorizationService);
     }
 }

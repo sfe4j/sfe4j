@@ -33,6 +33,11 @@ public class Sfe4jExceptionHandler {
 
     private static final String REQUEST_ID_ATTRIBUTE = Sfe4jExceptionHandler.class.getName() + ".requestId";
 
+    /**
+     * Prefix of the JSON text read API; P2 makes it configurable.
+     */
+    private static final String API_PREFIX = "/sfe4j/api";
+
     private FileExplorerService fileExplorerService;
 
     @ExceptionHandler(FileAccessException.class)
@@ -79,7 +84,7 @@ public class Sfe4jExceptionHandler {
             response.setHeader("Cache-Control", "no-store");
         }
 
-        if (wantsJson(request)) {
+        if (isApiRequest(request) || wantsJson(request)) {
             writeJson(response, code, message, requestId);
             return null;
         }
@@ -119,6 +124,15 @@ public class Sfe4jExceptionHandler {
         return base + "?dir=" + UrlCodec.encodeQueryValue(parent);
     }
 
+    /**
+     * The JSON API always answers JSON, even when the client does not send an {@code Accept} header:
+     * an HTML error page inside an event stream or a fetch response is not usable.
+     */
+    private boolean isApiRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri != null && uri.startsWith(request.getContextPath() + API_PREFIX);
+    }
+
     private boolean wantsJson(HttpServletRequest request) {
         String accept = request.getHeader("Accept");
         return accept != null && (accept.contains("application/json") || accept.contains("application/problem+json"));
@@ -142,33 +156,11 @@ public class Sfe4jExceptionHandler {
                 json.append(',');
             }
             first = false;
-            json.append('"').append(entry.getKey()).append("\":\"").append(escape(entry.getValue())).append('"');
+            json.append('"').append(entry.getKey()).append("\":\"").append(JsonWriter.escape(entry.getValue())).append('"');
         }
         json.append('}');
 
         response.getWriter().write(json.toString());
-    }
-
-    private static String escape(String value) {
-        StringBuilder escaped = new StringBuilder(value.length() + 8);
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            switch (c) {
-                case '"' -> escaped.append("\\\"");
-                case '\\' -> escaped.append("\\\\");
-                case '\n' -> escaped.append("\\n");
-                case '\r' -> escaped.append("\\r");
-                case '\t' -> escaped.append("\\t");
-                default -> {
-                    if (c < 0x20) {
-                        escaped.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        escaped.append(c);
-                    }
-                }
-            }
-        }
-        return escaped.toString();
     }
 
     private static String requestId(HttpServletRequest request) {
