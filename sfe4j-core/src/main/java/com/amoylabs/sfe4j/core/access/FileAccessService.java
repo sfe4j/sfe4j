@@ -5,6 +5,9 @@ import com.amoylabs.sfe4j.core.exception.FileAccessErrorCode;
 import com.amoylabs.sfe4j.core.exception.FileAccessException;
 import com.amoylabs.sfe4j.core.exception.Sfe4jRuntimeException;
 import com.amoylabs.sfe4j.core.service.TextFileReader;
+import com.amoylabs.sfe4j.core.text.TextReadRequest;
+import com.amoylabs.sfe4j.core.text.TextReadResult;
+import com.amoylabs.sfe4j.core.text.TextReadService;
 import com.amoylabs.sfe4j.core.util.PathStrings;
 import com.amoylabs.sfe4j.core.vo.BreadcrumbVO;
 import com.amoylabs.sfe4j.core.vo.FileContentVO;
@@ -43,6 +46,8 @@ public class FileAccessService {
     private final FileAccessPolicy fileAccessPolicy = new FileAccessPolicy();
 
     private final TextFileReader textFileReader = new TextFileReader();
+
+    private final TextReadService textReadService = new TextReadService();
 
     public FileAccessService(Sfe4jConfiguration configuration) {
         if (configuration == null) {
@@ -179,6 +184,27 @@ public class FileAccessService {
                 PathStrings.displayName(lexicalPath), configuration.getPreviewMaxBytes());
         preview.setParentPath(parent == null ? null : PathStrings.toUrlPath(parent));
         return preview;
+    }
+
+    /**
+     * Reads a bounded piece of text from an authorized file.
+     *
+     * <p>The read itself is bounded, but the target is authorized again on every call: a follow
+     * connection cannot hold a permission that has expired in the meantime.</p>
+     */
+    public TextReadResult readText(String file, FileAccessContext context, TextReadRequest request) {
+        ResolvedPath resolved = authorize(file, FileOperation.PREVIEW, context);
+        request.setRealPath(resolved.getRealPath());
+        return textReadService.read(request);
+    }
+
+    /**
+     * Reads the bytes appended after the position of a previous read.
+     */
+    public TextReadResult readTextIncrement(String file, FileAccessContext context, TextReadRequest request) {
+        ResolvedPath resolved = authorize(file, FileOperation.PREVIEW, context);
+        request.setRealPath(resolved.getRealPath());
+        return textReadService.readIncrement(request);
     }
 
     /**

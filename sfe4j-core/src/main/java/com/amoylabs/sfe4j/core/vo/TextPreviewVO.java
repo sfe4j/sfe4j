@@ -21,7 +21,19 @@ public class TextPreviewVO {
 
     private boolean decodingIssue;
 
+    private boolean lineTruncated;
+
     private String encoding;
+
+    private String mode = "head";
+
+    private int lines;
+
+    private int maxLines;
+
+    private String cursor;
+
+    private String generation;
 
     public String getFileName() {
         return fileName;
@@ -101,11 +113,74 @@ public class TextPreviewVO {
         this.decodingIssue = decodingIssue;
     }
 
+    /**
+     * {@code true} when the text ends inside a line: a single line exceeded the byte limit.
+     */
+    public boolean isLineTruncated() {
+        return lineTruncated;
+    }
+
+    public void setLineTruncated(boolean lineTruncated) {
+        this.lineTruncated = lineTruncated;
+    }
+
     public String getEncoding() {
         return encoding;
     }
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    /**
+     * @return read mode of the page: {@code head} or {@code tail}
+     */
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    /**
+     * @return number of lines that were requested, {@code 0} when the read is bounded by bytes only
+     */
+    public int getLines() {
+        return lines;
+    }
+
+    public void setLines(int lines) {
+        this.lines = lines;
+    }
+
+    public int getMaxLines() {
+        return maxLines;
+    }
+
+    public void setMaxLines(int maxLines) {
+        this.maxLines = maxLines;
+    }
+
+    /**
+     * @return opaque resume token of the read, {@code null} when log following is disabled
+     */
+    public String getCursor() {
+        return cursor;
+    }
+
+    public void setCursor(String cursor) {
+        this.cursor = cursor;
+    }
+
+    /**
+     * @return identity of the file, used to detect rotation while following
+     */
+    public String getGeneration() {
+        return generation;
+    }
+
+    public void setGeneration(String generation) {
+        this.generation = generation;
     }
 }

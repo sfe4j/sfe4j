@@ -24,6 +24,26 @@ public class Sfe4jConfiguration {
 
     public static final int DEFAULT_DOWNLOAD_MAX_CONCURRENT = 8;
 
+    public static final boolean DEFAULT_LOGS_ENABLED = false;
+
+    public static final int DEFAULT_LOGS_DEFAULT_LINES = 200;
+
+    public static final int DEFAULT_LOGS_MAX_LINES = 2000;
+
+    public static final long DEFAULT_LOGS_MAX_SCAN_BYTES = 1048576L;
+
+    public static final long DEFAULT_LOGS_POLL_INTERVAL_MS = 1000L;
+
+    public static final int DEFAULT_LOGS_MAX_CONNECTIONS = 20;
+
+    public static final int DEFAULT_LOGS_MAX_CONNECTIONS_PER_SESSION = 2;
+
+    public static final long DEFAULT_LOGS_MAX_CONNECTION_SECONDS = 1800L;
+
+    public static final int DEFAULT_LOGS_MAX_QUEUE_BYTES = 262144;
+
+    public static final int DEFAULT_LOGS_MAX_CHUNK_BYTES = 65536;
+
     private String title;
 
     private String description;
@@ -46,6 +66,26 @@ public class Sfe4jConfiguration {
 
     private Integer downloadMaxConcurrent;
 
+    private Boolean logsEnabled;
+
+    private Integer logsDefaultLines;
+
+    private Integer logsMaxLines;
+
+    private Long logsMaxScanBytes;
+
+    private Long logsPollIntervalMs;
+
+    private Integer logsMaxConnections;
+
+    private Integer logsMaxConnectionsPerSession;
+
+    private Long logsMaxConnectionSeconds;
+
+    private Integer logsMaxQueueBytes;
+
+    private Integer logsMaxChunkBytes;
+
     /**
      * Validates the configured ranges.
      *
@@ -57,6 +97,27 @@ public class Sfe4jConfiguration {
         checkRange("sfe4j.access.password-attempts-per-minute", getPasswordAttemptsPerMinute(), 1, 60);
         checkRange("sfe4j.preview.max-bytes", getPreviewMaxBytes(), 1024, 16777216L);
         checkRange("sfe4j.download.max-concurrent", getDownloadMaxConcurrent(), 1, 128);
+        checkRange("sfe4j.logs.default-lines", getLogsDefaultLines(), 1, 100000);
+        checkRange("sfe4j.logs.max-lines", getLogsMaxLines(), 1, 100000);
+        checkRange("sfe4j.logs.max-scan-bytes", getLogsMaxScanBytes(), 4096, 16777216L);
+        checkRange("sfe4j.logs.poll-interval-ms", getLogsPollIntervalMs(), 100, 60000);
+        checkRange("sfe4j.logs.max-connections", getLogsMaxConnections(), 1, 1000);
+        checkRange("sfe4j.logs.max-connections-per-session", getLogsMaxConnectionsPerSession(), 1, 64);
+        checkRange("sfe4j.logs.max-connection-seconds", getLogsMaxConnectionSeconds(), 30, 86400);
+        checkRange("sfe4j.logs.max-queue-bytes", getLogsMaxQueueBytes(), 4096, 10485760L);
+        checkRange("sfe4j.logs.max-chunk-bytes", getLogsMaxChunkBytes(), 1024, 1048576L);
+        checkOrder("sfe4j.logs.default-lines", getLogsDefaultLines(), "sfe4j.logs.max-lines", getLogsMaxLines());
+        checkOrder("sfe4j.logs.max-connections-per-session", getLogsMaxConnectionsPerSession(),
+                "sfe4j.logs.max-connections", getLogsMaxConnections());
+        checkOrder("sfe4j.logs.max-chunk-bytes", getLogsMaxChunkBytes(), "sfe4j.logs.max-queue-bytes",
+                getLogsMaxQueueBytes());
+    }
+
+    private static void checkOrder(String lowKey, long lowValue, String highKey, long highValue) {
+        if (lowValue > highValue) {
+            throw new Sfe4jRuntimeException(
+                    lowKey + " (" + lowValue + ") must not be greater than " + highKey + " (" + highValue + ").");
+        }
     }
 
     private static void checkRange(String key, long value, long min, long max) {
@@ -161,5 +222,90 @@ public class Sfe4jConfiguration {
 
     public void setDownloadMaxConcurrent(Integer downloadMaxConcurrent) {
         this.downloadMaxConcurrent = downloadMaxConcurrent;
+    }
+
+    /**
+     * @return {@code true} when text reading and log following are enabled; {@code false} when unset
+     */
+    public boolean getLogsEnabled() {
+        return Boolean.TRUE.equals(logsEnabled);
+    }
+
+    public void setLogsEnabled(Boolean logsEnabled) {
+        this.logsEnabled = logsEnabled;
+    }
+
+    public int getLogsDefaultLines() {
+        return logsDefaultLines == null ? DEFAULT_LOGS_DEFAULT_LINES : logsDefaultLines;
+    }
+
+    public void setLogsDefaultLines(Integer logsDefaultLines) {
+        this.logsDefaultLines = logsDefaultLines;
+    }
+
+    public int getLogsMaxLines() {
+        return logsMaxLines == null ? DEFAULT_LOGS_MAX_LINES : logsMaxLines;
+    }
+
+    public void setLogsMaxLines(Integer logsMaxLines) {
+        this.logsMaxLines = logsMaxLines;
+    }
+
+    public long getLogsMaxScanBytes() {
+        return logsMaxScanBytes == null ? DEFAULT_LOGS_MAX_SCAN_BYTES : logsMaxScanBytes;
+    }
+
+    public void setLogsMaxScanBytes(Long logsMaxScanBytes) {
+        this.logsMaxScanBytes = logsMaxScanBytes;
+    }
+
+    public long getLogsPollIntervalMs() {
+        return logsPollIntervalMs == null ? DEFAULT_LOGS_POLL_INTERVAL_MS : logsPollIntervalMs;
+    }
+
+    public void setLogsPollIntervalMs(Long logsPollIntervalMs) {
+        this.logsPollIntervalMs = logsPollIntervalMs;
+    }
+
+    public int getLogsMaxConnections() {
+        return logsMaxConnections == null ? DEFAULT_LOGS_MAX_CONNECTIONS : logsMaxConnections;
+    }
+
+    public void setLogsMaxConnections(Integer logsMaxConnections) {
+        this.logsMaxConnections = logsMaxConnections;
+    }
+
+    public int getLogsMaxConnectionsPerSession() {
+        return logsMaxConnectionsPerSession == null
+                ? DEFAULT_LOGS_MAX_CONNECTIONS_PER_SESSION
+                : logsMaxConnectionsPerSession;
+    }
+
+    public void setLogsMaxConnectionsPerSession(Integer logsMaxConnectionsPerSession) {
+        this.logsMaxConnectionsPerSession = logsMaxConnectionsPerSession;
+    }
+
+    public long getLogsMaxConnectionSeconds() {
+        return logsMaxConnectionSeconds == null ? DEFAULT_LOGS_MAX_CONNECTION_SECONDS : logsMaxConnectionSeconds;
+    }
+
+    public void setLogsMaxConnectionSeconds(Long logsMaxConnectionSeconds) {
+        this.logsMaxConnectionSeconds = logsMaxConnectionSeconds;
+    }
+
+    public int getLogsMaxQueueBytes() {
+        return logsMaxQueueBytes == null ? DEFAULT_LOGS_MAX_QUEUE_BYTES : logsMaxQueueBytes;
+    }
+
+    public void setLogsMaxQueueBytes(Integer logsMaxQueueBytes) {
+        this.logsMaxQueueBytes = logsMaxQueueBytes;
+    }
+
+    public int getLogsMaxChunkBytes() {
+        return logsMaxChunkBytes == null ? DEFAULT_LOGS_MAX_CHUNK_BYTES : logsMaxChunkBytes;
+    }
+
+    public void setLogsMaxChunkBytes(Integer logsMaxChunkBytes) {
+        this.logsMaxChunkBytes = logsMaxChunkBytes;
     }
 }

@@ -71,7 +71,11 @@ class TextFileReaderTest {
 
     @Test
     void invalidBytesAreReplacedAndReported() throws IOException {
-        byte[] content = {'o', 'k', ' ', (byte) 0xFF, (byte) 0xFE};
+        byte[] prefix = "the quick brown fox jumps over the lazy dog".getBytes(StandardCharsets.UTF_8);
+        byte[] content = new byte[prefix.length + 2];
+        System.arraycopy(prefix, 0, content, 0, prefix.length);
+        content[prefix.length] = (byte) 0xFF;
+        content[prefix.length + 1] = (byte) 0xFE;
         Path file = Files.write(root.resolve("broken.txt"), content);
 
         TextPreviewVO preview = reader.read(file, file.toString(), "broken.txt", 1024L);
@@ -102,11 +106,20 @@ class TextFileReaderTest {
     }
 
     @Test
-    void missingFileIsReportedAsIoError() {
+    void missingFileIsReportedAsNotFound() {
         Path missing = root.resolve("missing.txt");
 
         FileAccessException exception = assertThrows(FileAccessException.class,
                 () -> reader.read(missing, missing.toString(), "missing.txt", 1024L));
-        assertEquals(FileAccessErrorCode.FILE_IO_ERROR, exception.getCode());
+        assertEquals(FileAccessErrorCode.FILE_NOT_FOUND, exception.getCode());
+    }
+
+    @Test
+    void directoryIsNotReadAsText() throws IOException {
+        Path directory = Files.createDirectory(root.resolve("nested"));
+
+        FileAccessException exception = assertThrows(FileAccessException.class,
+                () -> reader.read(directory, directory.toString(), "nested", 1024L));
+        assertEquals(FileAccessErrorCode.UNSUPPORTED_PREVIEW, exception.getCode());
     }
 }

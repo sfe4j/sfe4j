@@ -5,6 +5,8 @@ import com.amoylabs.sfe4j.core.access.FileAccessService;
 import com.amoylabs.sfe4j.core.configuration.Sfe4jConfiguration;
 import com.amoylabs.sfe4j.core.constant.GlobalConstants;
 import com.amoylabs.sfe4j.core.exception.Sfe4jRuntimeException;
+import com.amoylabs.sfe4j.core.text.TextReadRequest;
+import com.amoylabs.sfe4j.core.text.TextReadResult;
 import com.amoylabs.sfe4j.core.vo.FileContentVO;
 import com.amoylabs.sfe4j.core.vo.FileDownloadVO;
 import com.amoylabs.sfe4j.core.vo.FileTreeVO;
@@ -66,6 +68,14 @@ public class FileExplorerService {
 
     public TextPreviewVO preview(String filePath, FileAccessContext context) {
         return access().preview(filePath, context);
+    }
+
+    public TextReadResult readText(String filePath, FileAccessContext context, TextReadRequest request) {
+        return access().readText(filePath, context, request);
+    }
+
+    public TextReadResult readTextIncrement(String filePath, FileAccessContext context, TextReadRequest request) {
+        return access().readTextIncrement(filePath, context, request);
     }
 
     public FileDownloadVO openDownload(String filePath, FileAccessContext context) {

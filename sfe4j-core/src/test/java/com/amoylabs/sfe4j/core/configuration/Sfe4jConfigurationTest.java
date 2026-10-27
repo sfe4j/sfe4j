@@ -23,6 +23,16 @@ class Sfe4jConfigurationTest {
         assertEquals(5, configuration.getPasswordAttemptsPerMinute());
         assertEquals(1048576L, configuration.getPreviewMaxBytes());
         assertEquals(8, configuration.getDownloadMaxConcurrent());
+        assertFalse(configuration.getLogsEnabled());
+        assertEquals(200, configuration.getLogsDefaultLines());
+        assertEquals(2000, configuration.getLogsMaxLines());
+        assertEquals(1048576L, configuration.getLogsMaxScanBytes());
+        assertEquals(1000L, configuration.getLogsPollIntervalMs());
+        assertEquals(20, configuration.getLogsMaxConnections());
+        assertEquals(2, configuration.getLogsMaxConnectionsPerSession());
+        assertEquals(1800L, configuration.getLogsMaxConnectionSeconds());
+        assertEquals(262144, configuration.getLogsMaxQueueBytes());
+        assertEquals(65536, configuration.getLogsMaxChunkBytes());
         configuration.validate();
     }
 
@@ -87,5 +97,59 @@ class Sfe4jConfigurationTest {
         Sfe4jConfiguration none = new Sfe4jConfiguration();
         none.setDownloadMaxConcurrent(0);
         assertThrows(Sfe4jRuntimeException.class, none::validate);
+    }
+
+    @Test
+    void logValuesOutOfRangeAreRejected() {
+        Sfe4jConfiguration lines = new Sfe4jConfiguration();
+        lines.setLogsMaxLines(0);
+        assertThrows(Sfe4jRuntimeException.class, lines::validate);
+
+        Sfe4jConfiguration scan = new Sfe4jConfiguration();
+        scan.setLogsMaxScanBytes(1024L);
+        assertThrows(Sfe4jRuntimeException.class, scan::validate);
+
+        Sfe4jConfiguration poll = new Sfe4jConfiguration();
+        poll.setLogsPollIntervalMs(10L);
+        assertThrows(Sfe4jRuntimeException.class, poll::validate);
+
+        Sfe4jConfiguration lifetime = new Sfe4jConfiguration();
+        lifetime.setLogsMaxConnectionSeconds(5L);
+        assertThrows(Sfe4jRuntimeException.class, lifetime::validate);
+
+        Sfe4jConfiguration queue = new Sfe4jConfiguration();
+        queue.setLogsMaxQueueBytes(1024);
+        assertThrows(Sfe4jRuntimeException.class, queue::validate);
+    }
+
+    @Test
+    void perSessionLimitMayNotExceedTheInstanceLimit() {
+        Sfe4jConfiguration configuration = new Sfe4jConfiguration();
+        configuration.setLogsMaxConnections(2);
+        configuration.setLogsMaxConnectionsPerSession(3);
+
+        Sfe4jRuntimeException exception = assertThrows(Sfe4jRuntimeException.class, configuration::validate);
+        assertTrue(exception.getMessage().contains("sfe4j.logs.max-connections-per-session"),
+                exception.getMessage());
+    }
+
+    @Test
+    void chunkMayNotExceedTheQueue() {
+        Sfe4jConfiguration configuration = new Sfe4jConfiguration();
+        configuration.setLogsMaxQueueBytes(65536);
+        configuration.setLogsMaxChunkBytes(131072);
+
+        Sfe4jRuntimeException exception = assertThrows(Sfe4jRuntimeException.class, configuration::validate);
+        assertTrue(exception.getMessage().contains("sfe4j.logs.max-chunk-bytes"), exception.getMessage());
+    }
+
+    @Test
+    void defaultLinesMayNotExceedTheMaximum() {
+        Sfe4jConfiguration configuration = new Sfe4jConfiguration();
+        configuration.setLogsMaxLines(100);
+        configuration.setLogsDefaultLines(500);
+
+        Sfe4jRuntimeException exception = assertThrows(Sfe4jRuntimeException.class, configuration::validate);
+        assertTrue(exception.getMessage().contains("sfe4j.logs.default-lines"), exception.getMessage());
     }
 }
