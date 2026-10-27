@@ -10,15 +10,17 @@ come from reading the code, they are not a complete security audit or a runtime 
 | --- | --- | --- |
 | File access facade | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/access/` | Path resolution, protection rules, shared authorization, file operations |
 | File system logic | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/service/FileExplorerService.java` | Page metadata and directory trees; reads are delegated to the access facade |
-| Text reading | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/service/TextFileReader.java` | Bounded read and UTF-8 decoding, reports truncation and decoding problems |
+| Text reading | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/text/` | `TextReadService` for bounded head/tail and incremental reads, encodings, BOM, binary heuristic; `TextFileReader` is the bounded head preview on top of it |
 | File reading utility | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/util/FileUtils.java` | Read helper, only used by the bounded preview read path |
 | Data model | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/vo/` | Files, directory trees, file content |
 | Configuration model | `sfe4j-core/src/main/java/com/amoylabs/sfe4j/core/configuration/Sfe4jConfiguration.java` | Framework independent configuration |
 | Access and session adapters | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/access/` | Session grant store, password rate limiting, CSRF, directory authorization |
+| Log following | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/logs/` | `LogFollowManager` (shared scheduler, quotas, queue bound, re-authorization) and the signed resume cursor |
 | Web infrastructure | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/web/` | Error handling, download concurrency limit, URL codec, path labels |
-| Web entry points | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/controller/` | Listing, preview and download, all of them go through the access facade |
+| Web entry points | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/controller/` | Listing, preview and download, all of them go through the access facade; `TextApiController` adds the JSON text read API and the follow stream |
 | Service beans | `sfe4j-spring-boot/src/main/java/com/amoylabs/sfe4j/spring/boot/config/BeanConfig.java` | Injects configuration into the file service and the access facade |
 | Pages | `sfe4j-spring-boot/src/main/resources/templates/` | `file-explorer.ftlh`, `file-viewer.ftlh`, `file-error.ftlh` |
+| Page script | `sfe4j-spring-boot/src/main/resources/static/js/sfe4j-text-viewer.js` | Line numbers, encoding and mode switching, follow, search and copy; inserts file text only as text nodes |
 | Auto configuration | `sfe4j-spring-boot-starter/src/main/java/com/amoylabs/sfe4j/spring/boot/starter/` | Property binding, mapping and validation, component scanning |
 | Runnable sample | `sfe4j-spring-boot-sample/src/main/` | Application class, ping controller, application YAML and profiles |
 
@@ -39,9 +41,15 @@ view or stream a download response through the access facade.
   auto escaped template.
 - `GET /file-downloader?file=...`: streams an attachment with a fixed buffer, answers 429 when
   the concurrency limit is reached.
+- `GET /sfe4j/api/text?file=...&mode=head|tail&lines=...&charset=...`: bounded JSON text read,
+  registered only when `sfe4j.logs.enabled=true`.
+- `GET /sfe4j/api/follow?file=...&charset=...&lines=...&cursor=...`: server sent event stream with
+  `snapshot`, `append`, `reset`, `gap` and `error` events; the target is authorized before the
+  stream is opened and again before every read round.
 - Properties are prefixed with `sfe4j` and cover `title`, `description`, `quick-links`,
-  `base-dir-path`, `restrict-to-base-dir`, `folder-passwords`, `access.*`, `preview.*` and
-  `download.*`.
+  `base-dir-path`, `restrict-to-base-dir`, `folder-passwords`, `access.*`, `preview.*`,
+  `download.*` and `logs.*`. `logs.enabled` defaults to `false`, which leaves the API, the follow
+  stream and the background scheduler unregistered.
 - The auto configuration defaults an empty base directory to `/` and an empty restriction flag
   to `false`; title and description fall back to `GlobalConstants` in the service. An out of
   range numeric value fails startup instead of degrading silently.
@@ -51,7 +59,7 @@ view or stream a download response through the access facade.
 
 ## Build and runtime facts
 
-- The four modules declare their version separately, currently `1.1.0`; the inter-module version
+- The four modules declare their version separately, currently `1.2.0`; the inter-module version
   properties are spread across the POMs, so a release has to update every place.
 - `core` depends on Commons Lang; `web` brings in Spring MVC and FreeMarker; `starter` wires the
   integration; `sample` inherits the Spring Boot parent and adds the Boot Admin client.
@@ -90,8 +98,10 @@ Kept for upcoming tasks. The first five were fixed by P0 and remain as regressio
 
 Remaining items (P1/P2 scope):
 
-6. **Following and log features**: head/tail of large logs, encoding selection, line numbers and
-   server sent event following are not implemented.
+6. ~~**Following and log features**: head/tail of large logs, encoding selection, line numbers and
+   server sent event following are not implemented.~~ Implemented by P1: bounded head/tail reads
+   with four encodings, and a follow stream with quotas, reset/gap handling and a signed cursor.
+   Syntax highlighting and the 20 connections / 30 minutes benchmark are still open.
 7. **Scale and integration**: multiple roots, a host authentication SPI, auditing, server side
    paging, localization and the removal statistics script are not implemented.
 8. **Concurrent replacement risk**: a TOCTOU window remains between the path check and opening

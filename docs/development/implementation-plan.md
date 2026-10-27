@@ -1,7 +1,8 @@
 # SFE4J Development and Acceptance Plan
 
-Status: P0 is implemented (see section 2 and the [P0 acceptance record](reports/p0.md)), P1 and P2
-are still to be developed. Task dependencies are merged before the feature entry points they
+Status: P0 is implemented (see section 2 and the [P0 acceptance record](reports/p0.md)), P1 is
+implemented except its load benchmark (see section 3 and the [P1 acceptance record](reports/p1.md))
+and P2 is still to be developed. Task dependencies are merged before the feature entry points they
 guard, and a stage is only rolled out after its acceptance.
 
 Design entry point: [design index](../design/README.md).
@@ -44,14 +45,17 @@ The executed results, the deviations from the design and the open items are reco
 
 | ID | Content | Depends on | Completion criteria |
 | --- | --- | --- | --- |
-| P1-01 | core bounded head/tail, encoding and BOM, decoding across block boundaries | P0-07 | multi encoding, very long line, truncation and binary detection tests pass |
-| P1-02 | web text API, safe viewer, line numbers/newlines/partial search | P1-01 | plain text rendering, explicit truncation, keyboard operable |
-| P1-03 | follow manager: shared scheduling, quotas, queues, lifecycle | P1-01 | slow client and connection leak tests pass |
-| P1-04 | SSE API, cursor, reconnect, rotation, authorization invalidation | P1-03 | reset/gap/append contract and cursor forgery tests pass |
-| P1-05 | follow page, pause and resume, DOM cap, configuration and load test report | P1-02, P1-04 | 20 connections / 30 minutes benchmark and interrupt recovery accepted |
+| P1-01 | core bounded head/tail, encoding and BOM, decoding across block boundaries | P0-07 | done | multi encoding, very long line, truncation and binary detection tests pass |
+| P1-02 | web text API, safe viewer, line numbers/newlines/partial search | P1-01 | done | plain text rendering, explicit truncation, keyboard operable |
+| P1-03 | follow manager: shared scheduling, quotas, queues, lifecycle | P1-01 | done (slow client test is an estimate based test) | quotas, expiry, close and rotation tests pass |
+| P1-04 | SSE API, cursor, reconnect, rotation, authorization invalidation | P1-03 | done | reset/gap/append contract and cursor forgery tests pass |
+| P1-05 | follow page, pause and resume, DOM cap, configuration and load test report | P1-02, P1-04 | done except the benchmark | page and configuration complete, 20 connections / 30 minutes benchmark and 1 GiB tail measurement not executed |
 
 Syntax highlighting can follow as P1-06 and does not block P1-05. Pick local resources and a safe
 plain text insertion first, then evaluate a highlighting library; do not pull in an external CDN.
+
+The executed results, the deviations from the design and the open items are recorded in
+[reports/p1.md](reports/p1.md).
 
 ## 4. P2 work packages
 

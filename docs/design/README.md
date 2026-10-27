@@ -1,9 +1,10 @@
 # SFE4J Feature Evolution Design Index
 
-Date: 2026-10-25. Status: P0 is implemented (see
-[section 10 of the P0 design](p0-security-reliability.md#10-implementation-record)); P1 and P2 are
-still designs to be implemented, so the class names, interfaces and configuration in those files
-are proposals and, unless a file explicitly describes the current state, are not implemented.
+Date: 2026-10-26. Status: P0 and P1 are implemented (see
+[section 10 of the P0 design](p0-security-reliability.md#10-implementation-record) and the
+[P1 acceptance record](../development/reports/p1.md)); P2 is still a design to be implemented, so
+the class names, interfaces and configuration in that file are proposals and, unless a file
+explicitly describes the current state, are not implemented.
 
 Goal: turn the existing file explorer into a safe, lightweight, read-only file and log tool that
 fits into a Spring Boot application or runs as a sidecar. The current analysis is based on the
@@ -24,7 +25,7 @@ For the current state see the [project guide](../ai/project-context.md), develop
 | Stage | User benefit | Release gate |
 | --- | --- | --- |
 | P0 | Listing, preview and download obey the same permissions; exceptions and large files are handled predictably | Implemented: every entry point bypass test passes, stream closing, escaping and error behaviour have regression coverage; integration tests and performance benchmarks were not executed |
-| P1 | Read configuration and large logs quickly, follow log changes | Reading, connections, threads and queues all have quotas; rotation and disconnects recover |
+| P1 | Read configuration and large logs quickly, follow log changes | Implemented: bounded head/tail reads with four encodings, a follow stream with quotas, reset/gap handling and a signed cursor; the 20 connections / 30 minutes benchmark and the 1 GiB tail measurement were not executed |
 | P2 | Plug into host authentication, serve several directories, audit access, page through large directories | Auto configuration is replaceable, authorization fails closed, paging cost is documented |
 
 This round only covers design and development documents. The implementation stage does not

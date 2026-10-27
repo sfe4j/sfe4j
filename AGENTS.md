@@ -8,7 +8,7 @@ English, code identifiers stay English as well.
 ## Project and module boundaries
 
 SFE4J is a file explorer, preview and download component for Spring Boot applications. The
-current version is 1.1.0, the POMs and CI use Java 25, and the Spring Boot dependency version is
+current version is 1.2.0, the POMs and CI use Java 25, and the Spring Boot dependency version is
 4.1.0; always trust the actual POM over this file.
 
 Dependency direction: `sample -> starter -> spring-boot -> core`.
@@ -61,7 +61,9 @@ Log paths are relative to the application working directory. The sample defaults
   `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. Never
   update only one of them and leave a stale class name behind.
 - Templates and scripts live directly under `sfe4j-spring-boot/src/main/resources`; do not edit
-  the vendored Bootstrap, jQuery and DataTables files to implement behaviour.
+  the vendored Bootstrap, jQuery and DataTables files to implement behaviour. New page scripts are
+  plain JavaScript in their own file under `static/js` and insert file text only with `textContent`
+  or text nodes.
 - Handle file paths for Linux/macOS and Windows, including spaces, non ASCII and other special
   characters.
 - Never commit real passwords, tokens, machine specific paths or build output; keep the license.
@@ -69,8 +71,9 @@ Log paths are relative to the application working directory. The sample defaults
 
 ## Security and testing
 
-- Review the listing, preview and download entry points together for any file access change;
-  hiding a link in a page is not a fix.
+- Review the listing, preview, download, text read API and follow stream entry points together for
+  any file access change; hiding a link in a page is not a fix. A follow connection is authorized
+  again before every read round, so a change in the facade must keep that call in place.
 - Base directory restrictions must consider normalized paths, `..`, sibling directories with a
   shared prefix and symbolic links; directory passwords must consider subdirectories,
   overlapping rules and session state. P0 moved all of these boundaries behind one facade with

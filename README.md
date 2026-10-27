@@ -20,6 +20,12 @@ Simple File Explorer for spring-boot based Java Web Application.
 - One authorization path for listing, preview and download; an unauthorized request is always denied
 - Text preview is rendered as escaped plain text; file content is never interpreted as markup
 - Downloads are streamed with a fixed buffer and a bounded concurrency limit
+- Bounded text reading: head or tail, a number of lines and an encoding (UTF-8, UTF-16LE, UTF-16BE,
+  GB18030) with byte order mark detection
+- Log following over server sent events: follow, pause and resume, rotation detection, bounded
+  connections, bounded queue and a signed resume cursor (opt in with `sfe4j.logs.enabled`)
+- The text page keeps at most 5000 lines and 2 MiB in the browser and never inserts file content as
+  markup
 - More features are coming ...
 
 ## Access behaviour
@@ -37,6 +43,11 @@ Simple File Explorer for spring-boot based Java Web Application.
   downloads is reached, further requests are answered with 429.
 - Errors are reported as a status page or as `{code, message, requestId}` JSON, without leaking host
   paths or exception details.
+- The text read API and the follow stream are registered only when `sfe4j.logs.enabled=true`; every
+  request is authorized like the page itself, and a follow connection is re-authorized before every
+  read round, so an expired directory grant or a rotated session ends it.
+- Rotated, truncated or replaced files produce a `reset` event and a new snapshot. An overwrite with
+  the same length cannot be detected from the file length alone.
 - A symbolic link between the base directory and the target is rejected by default.
 - Path parameters must be absolute or relative to the base directory; the process working directory is
   never used. `.`/`..` are normalized and the ownership of a directory is compared path segment by
@@ -73,7 +84,7 @@ Add the below dependency configuration to `pom.xml` of your project.
 ```
 Latest Version:
 ```xml
-    <sfe4j-spring-boot-starter-version>1.1.0</sfe4j-spring-boot-starter-version>
+    <sfe4j-spring-boot-starter-version>1.2.0</sfe4j-spring-boot-starter-version>
 ```
 #### Configure properties
 ##### prefix
@@ -94,6 +105,16 @@ sfe4j
 | access.password-attempts-per-minute | 1–60 | 5 | Password attempts per minute and per session/client address. |
 | preview.max-bytes | 1024–16777216 | 1048576 | Maximum number of bytes read for a text preview. |
 | download.max-concurrent | 1–128 | 8 | Maximum number of concurrent downloads; further requests are answered with 429. |
+| logs.enabled | Boolean | false | Whether the JSON text read API (`/sfe4j/api/text`) and the follow stream (`/sfe4j/api/follow`) are registered. |
+| logs.default-lines | 1–max-lines | 200 | Number of lines a read returns when the request does not ask for a specific amount. |
+| logs.max-lines | 1–100000 | 2000 | Upper bound of the lines one read returns. |
+| logs.max-scan-bytes | 4096–16777216 | 1048576 | Upper bound of the bytes scanned backwards for a tail read; the effort does not depend on the file size. |
+| logs.poll-interval-ms | 100–60000 | 1000 | Interval between two read rounds of a follow connection. |
+| logs.max-connections | 1–1000 | 20 | Follow connections per instance; further connections are answered with 429. |
+| logs.max-connections-per-session | 1–64 | 2 | Follow connections per session, not greater than max-connections. |
+| logs.max-connection-seconds | 30–86400 | 1800 | Lifetime of one follow connection. |
+| logs.max-queue-bytes | 4096–10485760 | 262144 | Upper bound of the bytes queued for one connection; exceeding it sends a gap and closes. |
+| logs.max-chunk-bytes | 1024–1048576 | 65536 | Upper bound of the bytes read in one round, not greater than max-queue-bytes. |
 ##### example
 ```properties
 sfe4j:
@@ -114,6 +135,17 @@ sfe4j:
     max-bytes: 1048576
   download:
     max-concurrent: 8
+  logs:
+    enabled: true
+    default-lines: 200
+    max-lines: 2000
+    max-scan-bytes: 1048576
+    poll-interval-ms: 1000
+    max-connections: 20
+    max-connections-per-session: 2
+    max-connection-seconds: 1800
+    max-queue-bytes: 262144
+    max-chunk-bytes: 65536
 ```
 A value outside the documented range stops the application at startup instead of silently falling back
 to a default.

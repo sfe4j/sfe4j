@@ -1,8 +1,13 @@
 # P1: Text Viewing and Log Troubleshooting
 
-Status: design to be implemented. Prerequisite: the P0 shared file access facade and its security
-regressions are in place. Goal: read large files within limits and follow logs under controlled
-resource usage.
+Status: implemented (P1-01 to P1-05, except the load benchmark and syntax highlighting).
+Prerequisite: the P0 shared file access facade and its security regressions are in place. Goal:
+read large files within limits and follow logs under controlled resource usage.
+
+Implementation notes and deviations are recorded in
+[../development/reports/p1.md](../development/reports/p1.md): the queue bound is an estimate, the
+first release does not expose a client supplied physical offset, and the 20 connections / 30
+minutes benchmark has not been executed.
 
 ## 1. User flow and scope
 
