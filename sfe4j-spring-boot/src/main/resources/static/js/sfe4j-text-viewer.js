@@ -20,7 +20,6 @@
     }
 
     var content = document.getElementById("sfe4j-content");
-    var gutter = document.getElementById("sfe4j-gutter");
     var statusLabel = document.getElementById("sfe4j-status");
     var charsetSelect = document.getElementById("sfe4j-charset");
     var modeSelect = document.getElementById("sfe4j-mode");
@@ -120,6 +119,11 @@
         }
     }
 
+    /*
+     * One block per logical line. The number and the text share the row, so a line that wraps
+     * pushes its own row down instead of shifting every number below it, which is what happened
+     * while the numbers and the text were two independent columns.
+     */
     function render() {
         var lines = enforceCaps();
         var text = normalized(state.text);
@@ -129,28 +133,35 @@
         if (content) {
             var fragment = document.createDocumentFragment();
             for (var i = 0; i < displayLines.length; i++) {
+                var row = document.createElement("div");
+                row.className = "sfe4j-line";
+
+                var number = document.createElement("span");
+                number.className = "sfe4j-no";
+                number.setAttribute("aria-hidden", "true");
+                number.textContent = String(i + 1);
+
+                var cell = document.createElement("span");
+                cell.className = "sfe4j-txt";
                 if (query) {
-                    appendHighlighted(fragment, displayLines[i], query);
+                    appendHighlighted(cell, displayLines[i], query);
                 } else {
-                    fragment.appendChild(document.createTextNode(displayLines[i]));
+                    cell.appendChild(document.createTextNode(displayLines[i]));
                 }
-                if (i < displayLines.length - 1) {
-                    fragment.appendChild(document.createTextNode("\n"));
-                }
+
+                row.appendChild(number);
+                row.appendChild(cell);
+                fragment.appendChild(row);
             }
             content.textContent = "";
             content.appendChild(fragment);
         }
 
-        if (gutter) {
-            var showNumbers = !lineNumbersToggle || lineNumbersToggle.checked;
-            gutter.style.display = showNumbers ? "" : "none";
-            if (showNumbers) {
-                var numbers = new Array(displayLines.length);
-                for (var n = 0; n < displayLines.length; n++) {
-                    numbers[n] = String(n + 1);
-                }
-                gutter.textContent = numbers.join("\n");
+        if (lineNumbersToggle) {
+            if (lineNumbersToggle.checked) {
+                content.className = "sfe4j-content";
+            } else {
+                content.className = "sfe4j-content sfe4j-no-numbers";
             }
         }
 

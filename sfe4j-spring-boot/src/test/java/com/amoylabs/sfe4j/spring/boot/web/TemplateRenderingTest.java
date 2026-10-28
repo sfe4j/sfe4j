@@ -80,6 +80,31 @@ class TemplateRenderingTest {
     }
 
     @Test
+    void theViewerKeepsNumbersAndTextInsideOneScrollingContainer() throws Exception {
+        TextPreviewVO preview = new TextPreviewVO();
+        preview.setFileName("app.log");
+        preview.setContent("line\n");
+        preview.setEncoding("UTF-8");
+        preview.setParentPath("/data/logs");
+        preview.setSize(5);
+        preview.setMaxBytes(1048576);
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("ctx", "");
+        model.put("url", new LinkBuilder(""));
+        model.put("meta", meta());
+        model.put("preview", preview);
+
+        String html = render("file-viewer.ftlh", model);
+
+        // Numbers and text used to be two sibling columns, so a wrapped line pushed every number
+        // below it out of sync. They now share one row and one scroll container.
+        assertTrue(html.contains("class=\"sfe4j-content\""));
+        assertTrue(html.contains("class=\"sfe4j-plain\""));
+        assertFalse(html.contains("sfe4j-gutter"), "numbers must not be a second scrolling column");
+    }
+
+    @Test
     void followControlsAreRenderedWhenLogFollowingIsEnabled() throws Exception {
         TextPreviewVO preview = new TextPreviewVO();
         preview.setFileName("app.log");

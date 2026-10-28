@@ -13,29 +13,59 @@
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 4px;
-            display: flex;
             max-height: 70vh;
             min-height: 120px;
             overflow: auto;
         }
 
-        .sfe4j-gutter {
-            background-color: #eef1f4;
-            border-right: 1px solid #dee2e6;
-            color: #6c757d;
-            margin: 0;
-            padding: 12px 8px 12px 12px;
-            text-align: right;
-            user-select: none;
-            white-space: pre;
+        .sfe4j-content {
+            padding: 8px 0;
+            font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            tab-size: 4;
         }
 
-        .sfe4j-content {
+        /* Rendered before the script runs, and by the follow snapshot path. */
+        .sfe4j-plain {
             margin: 0;
-            padding: 12px;
+            padding: 0 12px 12px 12px;
+            font: inherit;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+
+        /* One element per logical line, so a wrapped line keeps its own number. */
+        .sfe4j-line {
+            display: flex;
+            align-items: stretch;
+            min-height: 1.5em;
+        }
+
+        .sfe4j-no {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            flex: 0 0 auto;
+            min-width: 4em;
+            padding: 0 10px 0 12px;
+            border-right: 1px solid #dee2e6;
+            background-color: #eef1f4;
+            color: #6c757d;
+            text-align: right;
+            user-select: none;
+        }
+
+        .sfe4j-txt {
             flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .sfe4j-content.sfe4j-no-numbers .sfe4j-no {
+            display: none;
         }
 
         .sfe4j-content mark {
@@ -153,8 +183,7 @@
          data-lines="${preview.lines?c}"
          data-logs-enabled="${(logsEnabled!false)?c}"
          data-cursor="${preview.cursor!''}">
-        <pre id="sfe4j-gutter" class="sfe4j-gutter" aria-hidden="true"></pre>
-        <pre id="sfe4j-content" class="sfe4j-content">${preview.content}</pre>
+        <div id="sfe4j-content" class="sfe4j-content"><pre class="sfe4j-plain">${preview.content}</pre></div>
     </div>
 
     <p class="sfe4j-meta" id="sfe4j-hint">
