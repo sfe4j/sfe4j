@@ -59,7 +59,7 @@ view or stream a download response through the access facade.
 
 ## Build and runtime facts
 
-- The four modules declare their version separately, currently `1.2.0`; the inter-module version
+- The four modules declare their version separately, currently `1.2.1`; the inter-module version
   properties are spread across the POMs, so a release has to update every place.
 - `core` depends on Commons Lang; `web` brings in Spring MVC and FreeMarker; `starter` wires the
   integration; `sample` inherits the Spring Boot parent and adds the Boot Admin client.

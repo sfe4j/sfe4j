@@ -8,7 +8,7 @@ English, code identifiers stay English as well.
 ## Project and module boundaries
 
 SFE4J is a file explorer, preview and download component for Spring Boot applications. The
-current version is 1.2.0, the POMs and CI use Java 25, and the Spring Boot dependency version is
+current version is 1.2.1, the POMs and CI use Java 25, and the Spring Boot dependency version is
 4.1.0; always trust the actual POM over this file.
 
 Dependency direction: `sample -> starter -> spring-boot -> core`.
